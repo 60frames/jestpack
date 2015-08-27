@@ -1,0 +1,15 @@
+{
+  "name": "jest-webpack",
+  "version": "0.0.1",
+  "description": "Jest Webpack integration",
+  "main": "Plugin.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "Jest",
+    "Webpack"
+  ],
+  "author": "",
+  "license": "MIT"
+}
