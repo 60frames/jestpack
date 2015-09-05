@@ -1,15 +1,14 @@
 'use strict';
 
 /**
- * Resolves Jest API `moduleName` arguments.
+ * Adds support for Jest API.
  * e.g. jest.dontMock('./foo') => jest.dontMock(1);
  * @constructor
  */
 function JestWebpackPlugin() {}
 
 /**
- * Resolves arguments passed to Jest APIs.
- * Processes Jest api calls.
+ * Resolves Jest API `moduleName` arguments and updates the Webpack runtime.
  * @return {Undefined} undefined.
  */
 JestWebpackPlugin.prototype.apply = function(compiler) {
@@ -27,7 +26,6 @@ JestWebpackPlugin.prototype.apply = function(compiler) {
     compiler.parser.plugin('call jest.genMockFromModule', resolveArgument);
     compiler.parser.plugin('call jest.setMock', resolveArgument);
 
-    // Modify the Webpack runtime to use Jest's require.
     compiler.plugin('compilation', function(compilation) {
 
         // Replace `__webpack_require__` with `require` as defined by Jest's JSDom env.
@@ -35,8 +33,8 @@ JestWebpackPlugin.prototype.apply = function(compiler) {
             return 'jest.__webpack_require__';
         });
 
-        // Make the all references to the cache global so 'jest-webpack/ModuleLoader'
-        // can manage the object and the reference.
+        // Make all references to the module cache global so 'jest-webpack/ModuleLoader'
+        // can manage the object *and the reference*.
         compilation.mainTemplate.plugin('local-vars', function(source) {
             return source.replace('var installedModules', 'window.installedModules');
         });

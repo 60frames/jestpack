@@ -3,7 +3,6 @@
 // node-debug --nodejs --harmony node_modules/.bin/jest --runInBand
 
 var fs = require('fs');
-var objectAssign = require('object-assign');
 var HasteModuleLoader = require('jest-cli/src/HasteModuleLoader/HasteModuleLoader');
 var moduleMocker = require('jest-cli/src/lib/moduleMocker');
 var webpackStats;
@@ -193,11 +192,7 @@ ModuleLoader.prototype._shouldMock = function(moduleId) {
             && this._unmockListRegExps.length > 0) {
             this._configShouldMockModuleNames[moduleId] = !this._doesMatchUnmockListRegExps(moduleId);
         }
-        if (typeof this._configShouldMockModuleNames[moduleId] === 'undefined') {
-            // if here need to cast the value.
-            debugger;
-        }
-        return this._configShouldMockModuleNames[moduleId];
+        return !!this._configShouldMockModuleNames[moduleId];
     }
 
     return false;
