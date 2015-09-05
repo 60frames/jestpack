@@ -6,10 +6,17 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
-    "Jest",
-    "Webpack"
+    "jest",
+    "webpack",
+    "test",
+    "unit",
+    "jasmine",
+    "mock"
   ],
-  "author": "",
+  "author": {
+    "name": "Richard Scarrott",
+    "email": "rich@60fram.es"
+  },
   "license": "MIT",
   "dependencies": {
     "jest-cli": "^0.4.15"
