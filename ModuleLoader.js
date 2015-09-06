@@ -5,6 +5,7 @@
 var fs = require('fs');
 var HasteModuleLoader = require('jest-cli/src/HasteModuleLoader/HasteModuleLoader');
 var moduleMocker = require('jest-cli/src/lib/moduleMocker');
+var _ = require('underscore');
 var webpackStats;
 
 // TODO: Option out stats location, `config.webpackStatsPath`, taking into account
@@ -225,8 +226,13 @@ ModuleLoader.prototype._doesMatchUnmockListRegExps = function(moduleId) {
  *                           loader path.
  */
 ModuleLoader.prototype._getModulePathFromModuleId = function(moduleId) {
-    var identifier = webpackStats.modules[moduleId].identifier;
-    return identifier;
+    var moduleStats = _.findWhere(webpackStats.modules, {
+        id: moduleId
+    });
+    if (!moduleStats) {
+        throw new Error('ModuleId ' + moduleId + ' not found in Webpack stats json.');
+    }
+    return moduleStats.identifier;
 };
 
 ModuleLoader.loadResourceMap = HasteModuleLoader.loadResourceMap;
