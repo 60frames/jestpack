@@ -19,6 +19,7 @@
   },
   "license": "MIT",
   "dependencies": {
-    "jest-cli": "^0.4.15"
+    "jest-cli": "^0.4.15",
+    "underscore": "^1.8.3"
   }
 }

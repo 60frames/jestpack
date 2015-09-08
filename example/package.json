@@ -1,0 +1,37 @@
+{
+  "name": "jest-webpack-example",
+  "version": "0.0.1",
+  "description": "Example usage of Jest Webpack",
+  "main": "webpack.config.js",
+  "scripts": {
+    "start": "npm run build && npm test",
+    "build": "node node_modules/.bin/webpack",
+    "test": "node node_modules/.bin/jest"
+  },
+  "author": "",
+  "license": "ISC",
+  "jest": {
+    "rootDir": "../",
+    "moduleLoader": "<rootDir>/ModuleLoader",
+    "unmockedModulePathPatterns": [
+      "<rootDir>/example/node_modules/react",
+      "<rootDir>/example/node_modules/babel-runtime",
+      "<rootDir>/example/node_modules/style-loader",
+      "<rootDir>/example/node_modules/css-loader",
+      "<rootDir>/example/node_modules/bundle-loader"
+    ]
+  },
+  "devDependencies": {
+    "babel-core": "^5.8.23",
+    "babel-loader": "^5.3.2",
+    "css-loader": "^0.17.0",
+    "glob": "^5.0.14",
+    "jest-cli": "^0.4.19",
+    "stats-webpack-plugin": "^0.2.1",
+    "style-loader": "^0.12.3",
+    "webpack": "^1.12.1"
+  },
+  "dependencies": {
+    "react": "^0.13.3"
+  }
+}

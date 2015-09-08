@@ -38,7 +38,8 @@ modue.exports = {
     },
     ...
     plugins: [
-        new JestWebpackPlugin()
+        new JestWebpackPlugin(),
+        new StatsPlugin() // TODO: document this properly
     ]
     ...
 }
@@ -49,6 +50,7 @@ modue.exports = {
 - Create /example.
 - Support manual `__mocks__`...this isn't really useful until manual mocks are working.
 - Support `require.generateMock`, `require.requireMock` and `require.requireActual`.
+- Option out `stats.json` file path.
 - Improve performance; having to build Webpack on top of running Jest is slow.
     - Investigate dropping `HasteModuleLoader` altogether. In theory it should be
     possible as Webpack is handling module resolution and test isolation so the
