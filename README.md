@@ -6,7 +6,7 @@ One solution is to [compile tests with Webpack](https://github.com/ColCh/jest-we
 
 Another solution is to [strip the non-standard Webpack features using the script pre-processor](https://github.com/atecarlos/webpack-babel-jest) however, depending what features you're using, it's often not possible or means you're left unable to test integral code.
 
-Jest Webpack therefore takes a different approach and attempts to solve the problem by extending Jest's default `HasteModuleLoader` to support Webpack's internal module system.
+Jest Webpack therefore takes a different approach and attempts to solve the problem by ~~extending~~ replacing Jest's default `HasteModuleLoader` to support Webpack's internal module system.
 
 ## Setup
 ### Jest Config
@@ -47,13 +47,7 @@ modue.exports = {
 
 ## TODO
 
-- Create /example.
 - Support manual `__mocks__`...this isn't really useful until manual mocks are working.
 - Support `require.generateMock`, `require.requireMock` and `require.requireActual`.
 - Option out `stats.json` file path.
-- Improve performance; having to build Webpack on top of running Jest is slow.
-    - Investigate dropping `HasteModuleLoader` altogether. In theory it should be
-    possible as Webpack is handling module resolution and test isolation so the
-    files that are actually being executed by `HasteModuleLoader` are just the
-    pre-determined compiled test files (and maybe the `setupEnvScriptFile` and `setupTestFrameworkScriptFile`?).
-- Code coverage...Not even looked at this yet, might be more easily handled by Webpack?
+- Support code coverage.

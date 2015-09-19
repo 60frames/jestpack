@@ -16,8 +16,8 @@ describe('foo/foo', () => {
 
     it('has a description', () => {
         let title = TestUtils.findRenderedDOMComponentWithClass(component, 'description');
-        expect(title.getDOMNode().tagName).toBe('P');
-        expect(title.getDOMNode().textContent).toBe('World');
+        expect(React.findDOMNode(title).tagName).toBe('P');
+        expect(React.findDOMNode(title).textContent).toBe('World');
     });
 
 });

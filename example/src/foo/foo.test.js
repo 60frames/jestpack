@@ -17,8 +17,8 @@ describe('foo/foo', () => {
 
     it('has a title', () => {
         let title = TestUtils.findRenderedDOMComponentWithClass(component, 'title');
-        expect(title.getDOMNode().tagName).toBe('H1');
-        expect(title.getDOMNode().textContent).toBe('Hello');
+        expect(React.findDOMNode(title).tagName).toBe('H1');
+        expect(React.findDOMNode(title).textContent).toBe('Hello');
     });
 
     it('renders Bar', () => {
