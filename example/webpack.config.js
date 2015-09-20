@@ -27,7 +27,18 @@ module.exports = {
         path: '__tests__',
         filename: '[name]'
     },
+    resolveLoader: {
+        alias: {
+            'manual-mock': path.join(__dirname, '../ManualMockLoader.js')
+        }
+    },
     module: {
+        preLoaders: [
+            {
+                test: /\.js$/,
+                loader: 'manual-mock'
+            }
+        ],
         loaders: [
             {
                 test: /\.js$/,

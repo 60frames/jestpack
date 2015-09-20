@@ -26,4 +26,8 @@ describe('foo/foo', () => {
         expect(bar).toBeTruthy();
     });
 
+    it('uses manual mocks', function() {
+        expect(Foo.doSomething()).toBe('manually mocked module');
+    });
+
 });

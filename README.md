@@ -37,6 +37,13 @@ modue.exports = {
         test3: './tests/test3.test.js'
     },
     ...
+    preLoaders: [
+        {
+            test: /\.js$/,
+            loader: 'jest-webpack/ManualMockLoader' // TODO: check this loader resolves
+        }
+    ],
+    ...
     plugins: [
         new JestWebpackPlugin(),
         new StatsPlugin() // TODO: document this properly
@@ -47,7 +54,9 @@ modue.exports = {
 
 ## TODO
 
-- Support manual `__mocks__`...this isn't really useful until manual mocks are working.
+- Support `node_modules` manual mocks. (need to find out more from https://github.com/facebook/jest/issues/509)
 - Support `require.generateMock`, `require.requireMock` and `require.requireActual`.
+- Support `config.setupEnvScriptFile` and `config.setupTestFrameworkScriptFile`.
 - Option out `stats.json` file path.
+- Option out built test file location.
 - Support code coverage.

@@ -3,8 +3,15 @@
 var React = require('react');
 var style = require('./foo.css');
 var Bar = require('../bar/bar');
+var baz = require('../baz/baz');
 
 var Foo = React.createClass({
+
+    statics: {
+        doSomething: function() {
+            return baz.doSomething();
+        }
+    },
 
     render: function() {
         return (

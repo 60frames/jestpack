@@ -19,7 +19,10 @@
   },
   "license": "MIT",
   "dependencies": {
+    "bluebird": "^2.10.0",
+    "glob": "^5.0.14",
     "jest-cli": "^0.4.15",
+    "loader-utils": "^0.2.11",
     "underscore": "^1.8.3"
   }
 }

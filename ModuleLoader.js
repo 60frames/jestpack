@@ -1,7 +1,5 @@
 'use strict';
 
-// node-debug --nodejs --harmony node_modules/.bin/jest --runInBand
-
 var fs = require('fs');
 var path = require('path');
 var _ = require('underscore');
@@ -423,6 +421,13 @@ JestModuleLoader.prototype._generateMock = function(moduleId) {
         // Restore the "real" module/mock registries
         this._mockRegistry = origMockRegistry;
         this._environment.global.installedModules = origModuleRegistry;
+
+        // Once the module has been run we need check whether it has since
+        // been explicitly mocked via `jest.setMock('./foo', require('./__mocks__/foo'))`
+        // / the `ManualMockLoader`.
+        if (this._explicitlySetMocks.hasOwnProperty(moduleId)) {
+            return this._explicitlySetMocks[moduleId];
+        }
 
         this._mockMetaDataCache[moduleId] = moduleMocker.getMetadata(module);
     }
