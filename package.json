@@ -5,6 +5,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "engines": {
+    "node": "0.8.x || 0.10.x || >=2"
+  },
   "keywords": [
     "jest",
     "webpack",
@@ -21,7 +24,7 @@
   "dependencies": {
     "bluebird": "^2.10.0",
     "glob": "^5.0.14",
-    "jest-cli": "^0.4.15",
+    "jest-cli": "^0.4.19",
     "loader-utils": "^0.2.11",
     "underscore": "^1.8.3"
   }

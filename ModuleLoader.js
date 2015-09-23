@@ -185,12 +185,23 @@ JestModuleLoader.prototype._execModule = function(moduleObj) {
             jest: this._builtInModules['jest-runtime'](modulePath).exports
         };
 
-    utils.runContentWithLocalBindings(
-        this._environment.runSourceText.bind(this._environment),
-        fs.readFileSync(modulePath, 'utf8'),
-        modulePath,
-        moduleLocalBindings
-    );
+    // Might as well support 0.4.x and 0.5.x in order to support Node 0.10.x and 4.0.x
+    // https://github.com/facebook/jest/commit/eb2eaee1b6d882f529030e2f2a1c974f39fba1e1
+    try {
+        utils.runContentWithLocalBindings(
+            this._environment,
+            fs.readFileSync(modulePath, 'utf8'),
+            modulePath,
+            moduleLocalBindings
+        );
+    } catch (oh) {
+        utils.runContentWithLocalBindings(
+            this._environment.runSourceText.bind(this._environment),
+            fs.readFileSync(modulePath, 'utf8'),
+            modulePath,
+            moduleLocalBindings
+        );
+    }
 };
 
 // This is bound to the require in HasteModuleLoader, `JestModuleLoader` handles

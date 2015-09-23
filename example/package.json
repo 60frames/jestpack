@@ -10,6 +10,9 @@
     "build-debug": "node-debug node_modules/.bin/webpack",
     "test-debug": "node-debug --nodejs --harmony node_modules/.bin/jest --runInBand"
   },
+  "engines": {
+    "node": "0.8.x || 0.10.x || >=2"
+  },
   "author": "",
   "license": "ISC",
   "jest": {
