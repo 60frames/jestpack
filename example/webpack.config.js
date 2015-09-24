@@ -3,7 +3,7 @@
 var path = require('path');
 var glob = require('glob');
 var StatsWebpackPlugin = require('stats-webpack-plugin');
-var JestWebpackPlugin = require('../Plugin');
+var JestWebpackPlugin = require('jest-webpack/Plugin');
 
 /**
  * Given a glob pattern returns the matched paths as an entry point object for Webpack.
@@ -27,16 +27,11 @@ module.exports = {
         path: '__tests__',
         filename: '[name]'
     },
-    resolveLoader: {
-        alias: {
-            'manual-mock': path.join(__dirname, '../ManualMockLoader.js')
-        }
-    },
     module: {
         preLoaders: [
             {
                 test: /\.js$/,
-                loader: 'manual-mock'
+                loader: 'jest-webpack/ManualMockLoader'
             }
         ],
         loaders: [

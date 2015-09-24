@@ -40,7 +40,7 @@ modue.exports = {
     preLoaders: [
         {
             test: /\.js$/,
-            loader: 'jest-webpack/ManualMockLoader' // TODO: check this loader resolves
+            loader: 'jest-webpack/ManualMockLoader'
         }
     ],
     ...
