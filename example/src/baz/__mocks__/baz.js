@@ -1,7 +1,13 @@
 'use strict';
 
-module.exports = {
-    doSomething: function() {
-        return 'manually mocked module';
-    }
+var querystring = require.requireActual('querystring');
+
+var bazMock = {
+    doSomething: jest.genMockFunction()
 };
+
+bazMock.doSomething.mockReturnValue(querystring.stringify({
+    manually: 'mocked'
+}));
+
+module.export = bazMock;

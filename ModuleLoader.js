@@ -99,9 +99,6 @@ JestModuleLoader.loadResourceMapFromCacheFile = loadSimpleResourceMap;
 // TODO: need to think about how `setupEnvScriptFile` and `setupTestFrameworkScriptFile`
 // will work as the 'jest-runtime' depends on the Webpack runtime (i.e. __webpack_require__)
 // and so running these setup files before then won't work.
-// TODO: Add support for `require.requireActual` in the *Webpack Plugin*.
-// Also might need to add support for `require.generateMock` and `require.requireMock`
-// (although they're not documented)
 JestModuleLoader.prototype.constructBoundRequire = function(sourceModulePath) {
     return function () {
         throw new Error('`JestModuleLoader` does not implement `require` for modules outside of Webpack.');
@@ -343,6 +340,8 @@ JestModuleLoader.prototype.resetModuleRegistry = function() {
                     }.bind(this)
                 }
             };
+
+            jestRuntime.exports.__webpack_require__.requireActual = this._webpackRequireModule.bind(this);
 
             // This is a pretty common API to use in many tests, so this is just a
             // shorter alias to make it less annoying to type out each time.

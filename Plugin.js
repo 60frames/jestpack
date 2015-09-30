@@ -1,5 +1,7 @@
 'use strict';
 
+var ConstDependency = require('webpack/lib/dependencies/ConstDependency');
+
 /**
  * Adds support for Jest API.
  * e.g. jest.dontMock('./foo') => jest.dontMock(1);
@@ -25,6 +27,13 @@ JestWebpackPlugin.prototype.apply = function(compiler) {
     compiler.parser.plugin('call jest.mock', resolveArgument);
     compiler.parser.plugin('call jest.genMockFromModule', resolveArgument);
     compiler.parser.plugin('call jest.setMock', resolveArgument);
+    compiler.parser.plugin('call require.requireActual', resolveArgument);
+    compiler.parser.plugin('expression require.requireActual', function(expr) {
+        var dep = new ConstDependency('__webpack_require__.requireActual', expr.range);
+        dep.loc = expr.loc;
+        this.state.current.addDependency(dep);
+        return true;
+    });
 
     compiler.plugin('compilation', function(compilation) {
 
