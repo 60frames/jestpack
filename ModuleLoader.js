@@ -61,6 +61,7 @@ function JestModuleLoader(config, environment, resourceMap) {
     this._resourceMap = resourceMap;
     this._shouldAutoMock = true;
     this._configShouldMockModuleNames = {};
+    this._requiringActual = false;
 
     if (_configUnmockListRegExpCache === null) {
         // Node must have been run with --harmony in order for WeakMap to be
@@ -341,7 +342,13 @@ JestModuleLoader.prototype.resetModuleRegistry = function() {
                 }
             };
 
-            jestRuntime.exports.__webpack_require__.requireActual = this._webpackRequireModule.bind(this);
+            jestRuntime.exports.__webpack_require__.requireActual = function(moduleId) {
+                var module;
+                this._requiringActual = true;
+                module = this._webpackRequireModule(moduleId);
+                this._requiringActual = false;
+                return module;
+            }.bind(this)
 
             // This is a pretty common API to use in many tests, so this is just a
             // shorter alias to make it less annoying to type out each time.
@@ -447,14 +454,13 @@ JestModuleLoader.prototype._generateMock = function(moduleId) {
 
 /**
  * Determines whether a particular module should be mocked or not.
- * TODO: Handle manual mocks; they will need to be built into the bundle via a loader.
  * @param  {Number}  moduleId The Webpack moduleId.
  * @return {Boolean}
  */
 JestModuleLoader.prototype._shouldMock = function(moduleId) {
 
     // Never mock the entry module as that's the test.
-    if (moduleId === 0) {
+    if (moduleId === 0 || this._requiringActual) {
         return false;
     }
 

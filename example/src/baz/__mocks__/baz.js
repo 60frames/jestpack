@@ -10,4 +10,4 @@ bazMock.doSomething.mockReturnValue(querystring.stringify({
     manually: 'mocked'
 }));
 
-module.export = bazMock;
+module.exports = bazMock;
