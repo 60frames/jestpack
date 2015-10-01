@@ -312,6 +312,10 @@ JestModuleLoader.prototype.resetModuleRegistry = function() {
                         this._environment.fakeTimers.runAllTicks();
                     }.bind(this),
 
+                    runAllImmediates: function() {
+                        this._environment.fakeTimers.runAllImmediates();
+                    }.bind(this),
+
                     runAllTimers: function() {
                         this._environment.fakeTimers.runAllTimers();
                     }.bind(this),
