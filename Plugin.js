@@ -1,6 +1,6 @@
 'use strict';
 
-var ConstDependency = require('./example/node_modules/webpack/lib/dependencies/ConstDependency');
+var ConstDependency = require('webpack/lib/dependencies/ConstDependency');
 
 /**
  * Adds support for Jest API.

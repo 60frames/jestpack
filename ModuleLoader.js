@@ -7,6 +7,8 @@ var Promise = require('bluebird');
 var glob = require('glob');
 var moduleMocker = require('jest-cli/src/lib/moduleMocker');
 var utils = require('jest-cli/src/lib/utils');
+var jest = require('jest-cli/src/jest');
+var semver = require('semver');
 
 var _configUnmockListRegExpCache = null;
 var webpackStats;
@@ -186,16 +188,16 @@ JestModuleLoader.prototype._execModule = function(moduleObj) {
 
     // Might as well support 0.4.x and 0.5.x in order to support Node 0.10.x and 4.0.x
     // https://github.com/facebook/jest/commit/eb2eaee1b6d882f529030e2f2a1c974f39fba1e1
-    try {
+    if (semver.lt(jest.getVersion(), '0.5.0')) {
         utils.runContentWithLocalBindings(
-            this._environment,
+            this._environment.runSourceText.bind(this._environment),
             fs.readFileSync(modulePath, 'utf8'),
             modulePath,
             moduleLocalBindings
         );
-    } catch (oh) {
+    } else {
         utils.runContentWithLocalBindings(
-            this._environment.runSourceText.bind(this._environment),
+            this._environment,
             fs.readFileSync(modulePath, 'utf8'),
             modulePath,
             moduleLocalBindings
