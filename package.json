@@ -22,7 +22,8 @@
   },
   "license": "MIT",
   "peerDependencies": {
-    "jest-cli": "*"
+    "jest-cli": "*",
+    "webpack": "*"
   },
   "dependencies": {
     "bluebird": "^2.10.0",

@@ -1,10 +1,7 @@
 'use strict';
 
 var querystring = require.requireActual('querystring');
-
-var bazMock = {
-    doSomething: jest.genMockFunction()
-};
+var bazMock = jest.genMockFromModule('../baz');
 
 bazMock.doSomething.mockReturnValue(querystring.stringify({
     manually: 'mocked'

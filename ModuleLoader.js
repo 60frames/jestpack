@@ -62,6 +62,7 @@ function JestModuleLoader(config, environment, resourceMap) {
     this._shouldAutoMock = true;
     this._configShouldMockModuleNames = {};
     this._requiringActual = false;
+    this._manualMockMap = {};
 
     if (_configUnmockListRegExpCache === null) {
         // Node must have been run with --harmony in order for WeakMap to be
@@ -130,7 +131,7 @@ JestModuleLoader.prototype.getDependentsFromPath = function(modulePath) {
 };
 
 // Pretty certain this doesn't need to be public, it's only exposed on `require.requireMock`
-// which `JestModuleLoader` will handle via `jest.__webpack_require__.requireMock`.
+// which `JestModuleLoader` will handle via `jest._webpackRequire.requireMock`.
 JestModuleLoader.prototype.requireMock = function(currPath, moduleName) {
     throw new Error('\'JestModuleLoader\' does not implement `requireMock` for modules outside of Webpack.');
 };
@@ -203,7 +204,7 @@ JestModuleLoader.prototype._execModule = function(moduleObj) {
 };
 
 // This is bound to the require in HasteModuleLoader, `JestModuleLoader` handles
-// this with `jest.__webpack_require__`.
+// this with `jest._webpackRequire`.
 JestModuleLoader.prototype.requireModuleOrMock = function(currPath, moduleName) {
     throw new Error('\'JestModuleLoader\' does not implement `requireModuleOrMock` for modules outside of Webpack.');
 };
@@ -274,7 +275,7 @@ JestModuleLoader.prototype.resetModuleRegistry = function() {
                     }.bind(this),
 
                     genMockFromModule: function(moduleId) {
-                        return this._generateMock(moduleId);
+                        return this._generateMock(moduleId, true);
                     }.bind(this),
 
                     genMockFunction: function() {
@@ -334,15 +335,25 @@ JestModuleLoader.prototype.resetModuleRegistry = function() {
                     /**
                      * This is the 'patched' require passed around in the compiled
                      * Webpack build as `__webpack_require__`.
-                     * @return {*}           The module or mock.
+                     * @param  {Number} moduleId The Webpack moduleId.
+                     * @return {*}               The module or mock.
                      */
-                    __webpack_require__: function(moduleId) {
+                    _webpackRequire: function(moduleId) {
                         return this._webpackRequireModuleOrMock(moduleId);
+                    }.bind(this),
+
+                    /**
+                     * Registers a manual mock (used by the `ManualMockLoader`).
+                     * @param  {Number} moduleId     The Webpack moduleId.
+                     * @param  {Number} mockModuleId The Webpack mock moduleId.
+                     */
+                    _registerManualMock: function(moduleId, mockModuleId) {
+                        this._manualMockMap[moduleId] = mockModuleId;
                     }.bind(this)
                 }
             };
 
-            jestRuntime.exports.__webpack_require__.requireActual = function(moduleId) {
+            jestRuntime.exports._webpackRequire.requireActual = function(moduleId) {
                 var module;
                 this._requiringActual = true;
                 module = this._webpackRequireModule(moduleId);
@@ -389,7 +400,7 @@ JestModuleLoader.prototype._webpackRequireModule = function(moduleId) {
 
 /**
  * Requires a mocked version of the module.
- * @param  {Number} moduleId The Webpack moduleId. 
+ * @param  {Number} moduleId The Webpack moduleId.
  * @return {*}               The mock.
  */
 JestModuleLoader.prototype._webpackRequireMock = function(moduleId) {
@@ -407,10 +418,13 @@ JestModuleLoader.prototype._webpackRequireMock = function(moduleId) {
 };
 
 /**
- * Generates a mock from a given module.
+ * Generates a mock from the given module.
  * @override
+ * @param  {Number}  moduleId         The Webpack moduleId.
+ * @param  {Boolean} ignoreManualMock If true manual mocks won't be returned.
+ * @return {*}                        The mock.
  */
-JestModuleLoader.prototype._generateMock = function(moduleId) {
+JestModuleLoader.prototype._generateMock = function(moduleId, ignoreManualMock) {
 
     var origMockRegistry;
     var origModuleRegistry;
@@ -439,14 +453,13 @@ JestModuleLoader.prototype._generateMock = function(moduleId) {
         this._mockRegistry = origMockRegistry;
         this._environment.global.installedModules = origModuleRegistry;
 
-        // Once the module has been run we need check whether it has since
-        // been explicitly mocked via `jest.setMock('./foo', require('./__mocks__/foo'))`
-        // / the `ManualMockLoader`.
-        if (this._explicitlySetMocks.hasOwnProperty(moduleId)) {
-            return this._explicitlySetMocks[moduleId];
-        }
-
         this._mockMetaDataCache[moduleId] = moduleMocker.getMetadata(module);
+    }
+
+    // Check whether a manual mock was registered as a result of running the module
+    // via `jest._registerManualMock` / the `ManualMockLoader`.
+    if (!ignoreManualMock && this._manualMockMap.hasOwnProperty(moduleId)) {
+        return this._webpackRequireModule(this._manualMockMap[moduleId]);
     }
 
     return moduleMocker.generateFromMetadata(this._mockMetaDataCache[moduleId]);

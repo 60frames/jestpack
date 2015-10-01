@@ -22,9 +22,8 @@ module.exports = function(source, sourceMap) {
         if (stats.isFile()) {
             relativeModulePath = './' + fileName;
             relativeMockPath = './__mocks__/' + fileName;
-            source = 'jest.dontMock("' + relativeMockPath + '");\njest.setMock("' + relativeModulePath + '", require("' + relativeMockPath + '"));\n' + source;
-        } else {
-
+            source = 'jest._registerManualMock("' + relativeModulePath + '", "'
+                + relativeMockPath + '");\n' + source;
         }
     } catch (e) {
         // Manual mock not found.

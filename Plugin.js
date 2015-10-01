@@ -1,6 +1,6 @@
 'use strict';
 
-var ConstDependency = require('webpack/lib/dependencies/ConstDependency');
+var ConstDependency = require('./example/node_modules/webpack/lib/dependencies/ConstDependency');
 
 /**
  * Adds support for Jest API.
@@ -10,23 +10,35 @@ var ConstDependency = require('webpack/lib/dependencies/ConstDependency');
 function JestWebpackPlugin() {}
 
 /**
+ * Resolves module paths.
+ * @param  {Object} expr     The expression.
+ * @param  {Number} argIndex Which argument to resolve, defaults to the first arg.
+ */
+function resolveArgument(expr, argIndex) {
+    if (typeof argIndex === 'undefined') {
+        argIndex = 0;
+    }
+    if (!expr.arguments.length || !expr.arguments[argIndex]) {
+        return;
+    }
+    this.applyPluginsBailResult('call require:commonjs:item', expr,
+            this.evaluateExpression(expr.arguments[argIndex]));
+}
+
+/**
  * Resolves Jest API `moduleName` arguments and updates the Webpack runtime.
  * @return {Undefined} undefined.
  */
 JestWebpackPlugin.prototype.apply = function(compiler) {
 
-    // Resolve Jest api module paths.
-    function resolveArgument(expr) {
-        if (!expr.arguments.length) {
-            return;
-        }
-        this.applyPluginsBailResult('call require:commonjs:item', expr,
-                this.evaluateExpression(expr.arguments[0]));
-    }
     compiler.parser.plugin('call jest.dontMock', resolveArgument);
     compiler.parser.plugin('call jest.mock', resolveArgument);
     compiler.parser.plugin('call jest.genMockFromModule', resolveArgument);
     compiler.parser.plugin('call jest.setMock', resolveArgument);
+    compiler.parser.plugin('call jest._registerManualMock', function(expr) {
+        resolveArgument.call(this, expr);
+        resolveArgument.call(this, expr, 1);
+    });
     compiler.parser.plugin('call require.requireActual', resolveArgument);
     compiler.parser.plugin('expression require.requireActual', function(expr) {
         var dep = new ConstDependency('__webpack_require__.requireActual', expr.range);
@@ -39,7 +51,7 @@ JestWebpackPlugin.prototype.apply = function(compiler) {
 
         // Replace `__webpack_require__` with `require` as defined by Jest's JSDom env.
         compilation.mainTemplate.plugin('module-require', function(source) {
-            return 'jest.__webpack_require__';
+            return 'jest._webpackRequire';
         });
 
         // Make all references to the module cache global so 'jest-webpack/ModuleLoader'
