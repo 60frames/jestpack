@@ -54,8 +54,7 @@ modue.exports = {
 
 ## TODO
 
-- Support `node_modules` manual mocks. (need to find out more from https://github.com/facebook/jest/issues/509)
-- Support `config.setupEnvScriptFile` and `config.setupTestFrameworkScriptFile`.
 - Option out `stats.json` file path.
 - Option out built test file location.
+- Support `config.setupEnvScriptFile` and `config.setupTestFrameworkScriptFile`.
 - Support code coverage.

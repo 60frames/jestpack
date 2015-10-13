@@ -26,8 +26,16 @@ describe('foo/foo', () => {
         expect(bar).toBeTruthy();
     });
 
-    it('uses manual mocks', function() {
+    it('supports manual mocks', function() {
         expect(Foo.doSomething()).toBe('manually=mocked');
+    });
+
+    it('supports manual node_modules mocks', function() {
+        expect(Foo.joinPath('foo', 'bar')).toBe('manually mocked path');
+    });
+
+    it('supports nested manual node_modules mocks', function() {
+        expect(Foo.arrayLast([1, 2, 3])).toBe('manually mocked lodash/array/last');
     });
 
 });

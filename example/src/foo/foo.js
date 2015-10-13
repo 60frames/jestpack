@@ -4,12 +4,20 @@ var React = require('react');
 var style = require('./foo.css');
 var Bar = require('../bar/bar');
 var baz = require('../baz/baz');
+var path = require('path');
+var last = require('lodash/array/last');
 
 var Foo = React.createClass({
 
     statics: {
         doSomething: function() {
             return baz.doSomething();
+        },
+        joinPath: function() {
+            return path.join.apply(path, arguments);
+        },
+        arrayLast: function(arr) {
+            return last(arr);
         }
     },
 
