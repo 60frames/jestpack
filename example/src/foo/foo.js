@@ -5,7 +5,9 @@ var style = require('./foo.css');
 var Bar = require('../bar/bar');
 var baz = require('../baz/baz');
 var path = require('path');
-var last = require('lodash/array/last');
+var last = require('./localloader!lodash/array/last');
+
+last = require('./localloader!lodash/array/last.js');
 
 var Foo = React.createClass({
 
