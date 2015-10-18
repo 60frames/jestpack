@@ -6,7 +6,7 @@
   "scripts": {
     "start": "npm run build && npm test",
     "build": "node node_modules/.bin/webpack",
-    "test": "node node_modules/.bin/jest --runInBand",
+    "test": "node node_modules/.bin/jest",
     "build-debug": "node-debug node_modules/.bin/webpack",
     "test-debug": "node-debug --nodejs --harmony node_modules/.bin/jest --runInBand"
   },

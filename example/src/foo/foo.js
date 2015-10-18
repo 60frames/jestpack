@@ -6,6 +6,7 @@ var Bar = require('../bar/bar');
 var baz = require('../baz/baz');
 var path = require('path');
 var last = require('./localloader!lodash/array/last');
+var _ = require('underscore');
 
 last = require('./localloader!lodash/array/last.js');
 
