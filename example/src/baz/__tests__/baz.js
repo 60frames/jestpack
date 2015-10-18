@@ -1,8 +1,8 @@
 'use strict';
 
-jest.dontMock('./baz');
+jest.dontMock('../baz');
 
-const baz = require('./baz');
+const baz = require('../baz');
 
 describe('baz/baz', () => {
 

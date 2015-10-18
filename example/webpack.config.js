@@ -2,6 +2,7 @@
 
 var path = require('path');
 var glob = require('glob');
+var webpack = require('webpack');
 var StatsWebpackPlugin = require('stats-webpack-plugin');
 var JestWebpackPlugin = require('jest-webpack/Plugin');
 
@@ -22,9 +23,9 @@ function getEntryPoints(globPattern) {
 module.exports = {
     debug: true,
     target: 'web',
-    entry: getEntryPoints('src/**/*.test.js'),
+    entry: getEntryPoints('src/**/__tests__/*'),
     output: {
-        path: '__tests__',
+        path: '__bundled_tests__',
         filename: '[name]'
     },
     module: {
@@ -38,7 +39,7 @@ module.exports = {
             {
                 test: /\.js$/,
                 exclude: /node_modules/,
-                loader: 'babel?optional[]=runtime'
+                loader: 'babel'
             },
             {
                 test: /\.css$/,
@@ -49,8 +50,9 @@ module.exports = {
     },
     plugins: [
         new JestWebpackPlugin(),
-        new StatsWebpackPlugin('stats.json', {
-            chunkModules: true
+        new StatsWebpackPlugin('stats.json'),
+        new webpack.optimize.LimitChunkCountPlugin({
+            maxChunks: 1
         })
     ]
 };

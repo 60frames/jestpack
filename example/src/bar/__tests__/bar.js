@@ -1,9 +1,9 @@
 'use strict';
 
-jest.dontMock('./bar');
+jest.dontMock('../bar');
 
 const React = require('react/addons');
-const Bar = require('./bar');
+const Bar = require('../bar');
 const TestUtils = React.addons.TestUtils;
 
 describe('foo/foo', () => {

@@ -6,7 +6,7 @@
   "scripts": {
     "start": "npm run build && npm test",
     "build": "node node_modules/.bin/webpack",
-    "test": "node node_modules/.bin/jest",
+    "test": "node node_modules/.bin/jest --runInBand",
     "build-debug": "node-debug node_modules/.bin/webpack",
     "test-debug": "node-debug --nodejs --harmony node_modules/.bin/jest --runInBand"
   },
@@ -15,17 +15,10 @@
   },
   "author": "",
   "license": "ISC",
-  "jest-webpack": {
-    "statsPath": "__tests__/stats.json",
-    "bundledTestsPattern": "__tests__/**/*.test.js",
-    "bundledTestsIgnorePattern": ""
-  },
   "jest": {
     "moduleLoader": "<rootDir>/node_modules/jest-webpack/ModuleLoader",
     "unmockedModulePathPatterns": [
       "<rootDir>/node_modules/react",
-      "<rootDir>/node_modules/babel-runtime",
-      "<rootDir>/node_modules/style-loader",
       "<rootDir>/node_modules/css-loader",
       "<rootDir>/node_modules/bundle-loader"
     ]

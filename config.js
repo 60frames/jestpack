@@ -4,10 +4,9 @@ var glob = require('glob');
 var path = require('path');
 
 var PACKAGE_JSON_PATH = path.join(process.cwd(), 'package.json');
-// TODO: Refactor example file structure to be 'more jest' then come up with sensible defaults.
 var DEFAULTS = {
-    statsPath: '',
-    bundledTestsPattern: '',
+    statsPath: '__bundled_tests__/stats.json',
+    bundledTestsPattern: '__bundled_tests__/**',
     bundledTestsIgnorePattern: ''
 };
 

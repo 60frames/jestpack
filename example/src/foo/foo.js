@@ -9,21 +9,9 @@ var last = require('./localloader!lodash/array/last');
 
 last = require('./localloader!lodash/array/last.js');
 
-var Foo = React.createClass({
+class Foo extends React.Component {
 
-    statics: {
-        doSomething: function() {
-            return baz.doSomething();
-        },
-        joinPath: function() {
-            return path.join.apply(path, arguments);
-        },
-        arrayLast: function(arr) {
-            return last(arr);
-        }
-    },
-
-    render: function() {
+    render() {
         return (
             <div>
                 <h1 className={style.title}>Hello</h1>
@@ -32,6 +20,18 @@ var Foo = React.createClass({
         );
     }
 
-});
+}
+
+Foo.doSomething = function() {
+    return baz.doSomething();
+};
+
+Foo.joinPath = function() {
+    return path.join.apply(path, arguments);
+};
+
+Foo.arrayLast = function(arr) {
+    return last(arr);
+};
 
 module.exports = Foo;
