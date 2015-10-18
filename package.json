@@ -30,6 +30,7 @@
   "dependencies": {
     "bluebird": "^2.10.0",
     "glob": "^5.0.14",
+    "object-assign": "^4.0.1",
     "semver": "^5.0.3",
     "underscore": "^1.8.3"
   },

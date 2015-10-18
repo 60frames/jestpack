@@ -1,6 +1,7 @@
 'use strict';
 
 var path = require('path');
+var objectAssign = require('object-assign');
 
 var PACKAGE_JSON_PATH = path.join(process.cwd(), 'package.json');
 var DEFAULTS = {
@@ -34,7 +35,7 @@ function getConfig() {
     var packageJson = getPackageJson();
     var config = packageJson['jest-webpack'];
     var allowed = Object.keys(DEFAULTS);
-    config = Object.assign({}, DEFAULTS, config);
+    config = objectAssign({}, DEFAULTS, config);
     Object.keys(config).forEach(function(key) {
         if (allowed.indexOf(key) === -1) {
             throw new Error('Unknown config option: ' + key);
