@@ -1,6 +1,5 @@
 'use strict';
 
-var glob = require('glob');
 var path = require('path');
 
 var PACKAGE_JSON_PATH = path.join(process.cwd(), 'package.json');

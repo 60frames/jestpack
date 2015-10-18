@@ -2,7 +2,6 @@
 
 var path = require('path');
 var fs = require('fs');
-var loaderUtils = require('loader-utils');
 
 var LOADER_DELIMITER = '!';
 var MOCKS_DIR_NAME = '__mocks__';
@@ -10,13 +9,13 @@ var MOCKS_DIR_NAME = '__mocks__';
 /**
  * A module is considered a package if a) it does not being with './',
  * '/' or '../' and b) it's in a `config.resolve.modulesDirectories` dir.
- * @param  {String}  rawRequest         The raw request (without loaders).
- * @param  {String}  resourcePath       The absolute resource path. 
- * @param  {Array}   modulesDirectories Array of module directories, e.g. 'node_modules',
- *                                      'web_modules' etc.
+ * @param  {String}  loaderLessRawRequest The raw request (without loaders).
+ * @param  {String}  resourcePath         The absolute resource path.
+ * @param  {Array}   modulesDirectories   Array of module directories, e.g. 'node_modules',
+ *                                        'web_modules' etc.
  * @return {Boolean}
  */
- function isPackage(loaderLessRawRequest, resourcePath, modulesDirectories) {
+function isPackage(loaderLessRawRequest, resourcePath, modulesDirectories) {
     return modulesDirectories.some(function(dir) {
         return resourcePath.indexOf(dir) !== -1;
     }) && !['.', '/'].some(function(val) {
@@ -24,7 +23,7 @@ var MOCKS_DIR_NAME = '__mocks__';
     });
 }
 
-module.exports = function(source, sourceMap) {
+module.exports = function(source) {
 
     var cwd = process.cwd();
     var request = this.request;
@@ -60,8 +59,8 @@ module.exports = function(source, sourceMap) {
         if (stats.isFile()) {
             // Using '!!' (https://webpack.github.io/docs/loaders.html#loader-order) to disable all loaders
             // specified in config as the `request` already contains the absolute loader paths.
-            source = 'jest._registerManualMock("!!' + request + '", "'
-                + mockResourcePath + '");\n' + source;
+            source = 'jest._registerManualMock("!!' + request + '", "' +
+                mockResourcePath + '");\n' + source;
         }
     } catch (e) {
         // Manual mock does not exist.

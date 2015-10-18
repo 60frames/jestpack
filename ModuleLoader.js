@@ -9,15 +9,16 @@ var moduleMocker = require('jest-cli/src/lib/moduleMocker');
 var utils = require('jest-cli/src/lib/utils');
 var jest = require('jest-cli/src/jest');
 var semver = require('semver');
-var config = require('./config');
+var jestWebpackConfig = require('./config');
 
 var _configUnmockListRegExpCache = null;
 var webpackStats;
+var message;
 
 try {
-    webpackStats = require(path.join(process.cwd(), config.statsPath));
+    webpackStats = require(path.join(process.cwd(), jestWebpackConfig.statsPath));
 } catch (oh) {
-    var message = oh.message;
+    message = oh.message;
     oh.message = 'Cannot find Webpack stats. \nError: ' + message;
     throw oh;
 }
@@ -28,9 +29,9 @@ try {
  */
 function loadSimpleResourceMap() {
     return new Promise(function(resolve, reject) {
-        glob(config.bundledTestsPattern, {
-            ignore: config.bundledTestsIgnorePattern
-        }, function (err, files) {
+        glob(jestWebpackConfig.bundledTestsPattern, {
+            ignore: jestWebpackConfig.bundledTestsIgnorePattern
+        }, function(err, files) {
             var resourceMap;
             if (err) {
                 reject(err);
@@ -80,8 +81,8 @@ function JestModuleLoader(config, environment, resourceMap) {
         _configUnmockListRegExpCache = new WeakMap();
     }
 
-    if (!config.unmockedModulePathPatterns
-        || config.unmockedModulePathPatterns.length === 0) {
+    if (!config.unmockedModulePathPatterns ||
+        config.unmockedModulePathPatterns.length === 0) {
         this._unmockListRegExps = [];
     } else {
         this._unmockListRegExps = _configUnmockListRegExpCache.get(config);
@@ -107,7 +108,7 @@ JestModuleLoader.loadResourceMapFromCacheFile = loadSimpleResourceMap;
 // will work as the 'jest-runtime' depends on the Webpack runtime (i.e. __webpack_require__)
 // and so running these setup files before then won't work.
 JestModuleLoader.prototype.constructBoundRequire = function(sourceModulePath) {
-    return function () {
+    return function() {
         throw new Error('`JestModuleLoader` does not implement `require` for modules outside of Webpack.');
     };
 };
@@ -122,16 +123,16 @@ JestModuleLoader.prototype.getAllCoverageInfo = function() {
     throw new Error('\'JestModuleLoader\' does not implement coverage.');
 };
 
-JestModuleLoader.prototype.getCoverageForFilePath = function(filePath) {
+JestModuleLoader.prototype.getCoverageForFilePath = function() {
     throw new Error('\'JestModuleLoader\' does not implement coverage.');
 };
 
-JestModuleLoader.prototype.getDependenciesFromPath = function(modulePath) {
+JestModuleLoader.prototype.getDependenciesFromPath = function() {
     throw new Error('\'JestModuleLoader\' does not implement coverage.');
 };
 
 // TODO: Investigate this method further (it's called from TestRunner).
-JestModuleLoader.prototype.getDependentsFromPath = function(modulePath) {
+JestModuleLoader.prototype.getDependentsFromPath = function() {
     return [];
 };
 
@@ -147,7 +148,7 @@ JestModuleLoader.prototype.requireMock = function(currPath, moduleName) {
  * by Webpack which means this can be greatly simplified vs `HasteModuleLoader`.
  * This means the `currPath` always === `moduleName` and `bypassRegistryCache` is
  * not applicable.
- *                        
+ *
  * @param  {String}  currPath            The path of the file that is attempting to
  *                                       resolve the module.
  * @param  {String}  moduleName          The name of the module to be resolved.
@@ -181,13 +182,13 @@ JestModuleLoader.prototype.requireModule = function(currPath, moduleName) {
  */
 JestModuleLoader.prototype._execModule = function(moduleObj) {
 
-    var modulePath = moduleObj.__filename,
-        moduleLocalBindings = {
-            // `module`, `exports`, `require`, `__dirname` and `__filename` aren't
-            // necessary here as we're only executing a Webpack bundle.
-            global: this._environment.global,
-            jest: this._builtInModules['jest-runtime'](modulePath).exports
-        };
+    var modulePath = moduleObj.__filename;
+    var moduleLocalBindings = {
+        // `module`, `exports`, `require`, `__dirname` and `__filename` aren't
+        // necessary here as we're only executing a Webpack bundle.
+        global: this._environment.global,
+        jest: this._builtInModules['jest-runtime'](modulePath).exports
+    };
 
     // Might as well support 0.4.x and 0.5.x in order to support Node 0.10.x and 4.0.x
     // https://github.com/facebook/jest/commit/eb2eaee1b6d882f529030e2f2a1c974f39fba1e1
@@ -210,7 +211,7 @@ JestModuleLoader.prototype._execModule = function(moduleObj) {
 
 // This is bound to the require in HasteModuleLoader, `JestModuleLoader` handles
 // this with `jest._webpackRequire`.
-JestModuleLoader.prototype.requireModuleOrMock = function(currPath, moduleName) {
+JestModuleLoader.prototype.requireModuleOrMock = function() {
     throw new Error('\'JestModuleLoader\' does not implement `requireModuleOrMock` for modules outside of Webpack.');
 };
 
@@ -219,8 +220,8 @@ JestModuleLoader.prototype.requireModuleOrMock = function(currPath, moduleName) 
  * @param  {String} dir Has no use in `JestModuleLoader`.
  * @return {Object}     The Jest runtime.
  */
-JestModuleLoader.prototype.getJestRuntime = function(dir) {
-    return this._builtInModules['jest-runtime'](dir).exports;
+JestModuleLoader.prototype.getJestRuntime = function() {
+    return this._builtInModules['jest-runtime']().exports;
 };
 
 /**
@@ -235,7 +236,7 @@ JestModuleLoader.prototype.resetModuleRegistry = function() {
     // not bother re-evaluating the runtime every time as the `currPath` isn't necessary
     // with Webpack's normalized moduleIds.
     this._builtInModules = {
-        'jest-runtime': function(currPath) {
+        'jest-runtime': function() {
             var jestRuntime = {
                 exports: {
                     addMatchers: function(matchers) {
@@ -292,6 +293,7 @@ JestModuleLoader.prototype.resetModuleRegistry = function() {
                         return jestRuntime.exports;
                     }.bind(this),
 
+                    /* eslint-disable */
                     resetModuleRegistry: function() {
                         var globalMock;
                         for (var key in this._environment.global) {
@@ -310,6 +312,7 @@ JestModuleLoader.prototype.resetModuleRegistry = function() {
 
                         return jestRuntime.exports;
                     }.bind(this),
+                    /* eslint-enable */
 
                     runAllTicks: function() {
                         this._environment.fakeTimers.runAllTicks();
@@ -368,10 +371,8 @@ JestModuleLoader.prototype.resetModuleRegistry = function() {
                 module = this._webpackRequireModule(moduleId);
                 this._requiringActual = false;
                 return module;
-            }.bind(this)
+            }.bind(this);
 
-            // This is a pretty common API to use in many tests, so this is just a
-            // shorter alias to make it less annoying to type out each time.
             jestRuntime.exports.genMockFn = jestRuntime.exports.genMockFunction;
 
             return jestRuntime;
@@ -387,9 +388,8 @@ JestModuleLoader.prototype.resetModuleRegistry = function() {
 JestModuleLoader.prototype._webpackRequireModuleOrMock = function(moduleId) {
     if (this._shouldMock(moduleId)) {
         return this._webpackRequireMock(moduleId);
-    } else {
-        return this._webpackRequireModule(moduleId);
     }
+    return this._webpackRequireModule(moduleId);
 };
 
 /**
@@ -397,14 +397,14 @@ JestModuleLoader.prototype._webpackRequireModuleOrMock = function(moduleId) {
  * @param  {Number} moduleId The Webpack moduleId.
  * @return {*}               The module.
  */
-JestModuleLoader.prototype._webpackRequireModule = function(moduleId) {
-    var __webpack_require__ = this._environment.global.__webpack_require__;
-    
-    if (!__webpack_require__) {
+JestModuleLoader.prototype._webpackRequireModule = function() {
+    var webpackRequire = this._environment.global.__webpack_require__;
+
+    if (!webpackRequire) {
         throw new Error('`__webpack_require__` has not been defined in the JSDom environment.');
     }
 
-    return __webpack_require__.apply(void 0, arguments);
+    return webpackRequire.apply(void 0, arguments);
 };
 
 /**
@@ -491,8 +491,8 @@ JestModuleLoader.prototype._shouldMock = function(moduleId) {
     }
 
     if (this._shouldAutoMock) {
-        if (!this._configShouldMockModuleNames.hasOwnProperty(moduleId)
-            && this._unmockListRegExps.length > 0) {
+        if (!this._configShouldMockModuleNames.hasOwnProperty(moduleId) &&
+            this._unmockListRegExps.length > 0) {
             this._configShouldMockModuleNames[moduleId] = !this._doesMatchUnmockListRegExps(moduleId);
         }
         return !!this._configShouldMockModuleNames[moduleId];
@@ -510,8 +510,9 @@ JestModuleLoader.prototype._doesMatchUnmockListRegExps = function(moduleId) {
 
     var modulePath = this._getModulePathFromModuleId(moduleId);
     var unmockRegExp;
+    var i;
 
-    for (var i = 0; i < this._unmockListRegExps.length; i++) {
+    for (i = 0; i < this._unmockListRegExps.length; i++) {
         unmockRegExp = this._unmockListRegExps[i];
         if (unmockRegExp.test(modulePath)) {
             return true;

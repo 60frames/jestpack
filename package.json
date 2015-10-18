@@ -14,7 +14,9 @@
     "test",
     "unit",
     "jasmine",
-    "mock"
+    "mock",
+    "TDD",
+    "BDD"
   ],
   "author": {
     "name": "Richard Scarrott",
@@ -28,8 +30,10 @@
   "dependencies": {
     "bluebird": "^2.10.0",
     "glob": "^5.0.14",
-    "loader-utils": "^0.2.11",
     "semver": "^5.0.3",
     "underscore": "^1.8.3"
+  },
+  "devDependencies": {
+    "coding-standards": "git+ssh://git@github.com:60frames/coding-standards.git#1.0.6"
   }
 }

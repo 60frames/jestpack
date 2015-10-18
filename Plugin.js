@@ -50,7 +50,7 @@ JestWebpackPlugin.prototype.apply = function(compiler) {
     compiler.plugin('compilation', function(compilation) {
 
         // Replace `__webpack_require__` with `require` as defined by Jest's JSDom env.
-        compilation.mainTemplate.plugin('module-require', function(source) {
+        compilation.mainTemplate.plugin('module-require', function() {
             return 'jest._webpackRequire';
         });
 
