@@ -15,6 +15,11 @@
   },
   "author": "",
   "license": "ISC",
+  "jest-webpack": {
+    "statsPath": "__tests__/stats.json",
+    "bundledTestsPattern": "__tests__/**/*.test.js",
+    "bundledTestsIgnorePattern": ""
+  },
   "jest": {
     "moduleLoader": "<rootDir>/node_modules/jest-webpack/ModuleLoader",
     "unmockedModulePathPatterns": [

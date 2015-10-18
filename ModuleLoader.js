@@ -9,27 +9,28 @@ var moduleMocker = require('jest-cli/src/lib/moduleMocker');
 var utils = require('jest-cli/src/lib/utils');
 var jest = require('jest-cli/src/jest');
 var semver = require('semver');
+var config = require('./config');
 
 var _configUnmockListRegExpCache = null;
 var webpackStats;
 
-// TODO: Option out stats location, `config.webpackStatsPath`, taking into account
-// <rootDir>. Will need to use another key in 'package.json' as Jest throws
-// if an unrecognised key exists...
 try {
-    webpackStats = require(path.resolve(process.cwd(), './__tests__/stats.json'));
+    webpackStats = require(path.join(process.cwd(), config.statsPath));
 } catch (oh) {
     var message = oh.message;
     oh.message = 'Cannot find Webpack stats. \nError: ' + message;
     throw oh;
 }
 
-// TODO: Respect test path config options...or, as most of that isn't necessary
-// because these are bundled test files create new option along with Webpack stats
-// location.
-function loadSimpleResourceMap(config, options) {
+/**
+ * Builds simple resource map containing only the bundled test files.
+ * @return {Promise} The 'node-haste'(ish) resource map.
+ */
+function loadSimpleResourceMap() {
     return new Promise(function(resolve, reject) {
-        glob('__tests__/**/*.js', options, function (err, files) {
+        glob(config.bundledTestsPattern, {
+            ignore: config.bundledTestsIgnorePattern
+        }, function (err, files) {
             var resourceMap;
             if (err) {
                 reject(err);
@@ -98,6 +99,8 @@ function JestModuleLoader(config, environment, resourceMap) {
 
 JestModuleLoader.loadResourceMap = loadSimpleResourceMap;
 
+// NOTE: Currently doesn't implement cache file, not sure if 'glob' supports this or if
+// a fs.stats obj will need to be manually stored.
 JestModuleLoader.loadResourceMapFromCacheFile = loadSimpleResourceMap;
 
 // TODO: need to think about how `setupEnvScriptFile` and `setupTestFrameworkScriptFile`
