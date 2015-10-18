@@ -28,12 +28,12 @@ function getPackageJson() {
 }
 
 /**
- * Reads the 'jest-webpack' config from package json.
+ * Reads the 'jestpack' config from package json.
  * @return {Object} The config.
  */
 function getConfig() {
     var packageJson = getPackageJson();
-    var config = packageJson['jest-webpack'];
+    var config = packageJson.jestpack;
     var allowed = Object.keys(DEFAULTS);
     config = objectAssign({}, DEFAULTS, config);
     Object.keys(config).forEach(function(key) {

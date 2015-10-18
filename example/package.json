@@ -1,5 +1,5 @@
 {
-  "name": "jest-webpack-example",
+  "name": "jestpack-example",
   "version": "0.0.1",
   "description": "Example usage of Jest Webpack",
   "main": "webpack.config.js",
@@ -16,7 +16,7 @@
   "author": "",
   "license": "ISC",
   "jest": {
-    "moduleLoader": "<rootDir>/node_modules/jest-webpack/ModuleLoader",
+    "moduleLoader": "<rootDir>/node_modules/jestpack/ModuleLoader",
     "unmockedModulePathPatterns": [
       "<rootDir>/node_modules/react",
       "<rootDir>/node_modules/css-loader",
@@ -29,7 +29,7 @@
     "css-loader": "^0.17.0",
     "glob": "^5.0.14",
     "jest-cli": "^0.4.19 || ^0.5",
-    "jest-webpack": "git+ssh://git@github.com:60frames/jest-webpack.git",
+    "jestpack": "git+ssh://git@github.com:60frames/jestpack.git",
     "stats-webpack-plugin": "^0.2.1",
     "style-loader": "^0.12.3",
     "webpack": "^1.12.1"

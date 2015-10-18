@@ -1,4 +1,4 @@
-# Jest Webpack Example
+# Jestpack Example
 
 ### Node 4.x.x
 `npm install && npm start`

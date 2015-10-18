@@ -1,5 +1,5 @@
 {
-  "name": "jest-webpack",
+  "name": "jestpack",
   "version": "0.0.1",
   "description": "Jest Webpack integration",
   "scripts": {
@@ -9,6 +9,7 @@
     "node": "0.8.x || 0.10.x || >=2"
   },
   "keywords": [
+    "jestpack",
     "jest",
     "webpack",
     "test",

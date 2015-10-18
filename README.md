@@ -1,4 +1,4 @@
-# Jest Webpack
+# Jestpack
 
 Unfortunately [Jest](https://facebook.github.io/jest/) doesn't play nicely with apps built using [Webpack](https://webpack.github.io/), especially those using some of Webpack's more useful but non-standard features such as [loaders](http://webpack.github.io/docs/loaders.html) and [code splitting](http://webpack.github.io/docs/code-splitting.html).
 
@@ -6,7 +6,7 @@ One solution is to [compile tests with Webpack](https://github.com/ColCh/jest-we
 
 Another solution is to [strip the non-standard Webpack features using the script pre-processor](https://github.com/atecarlos/webpack-babel-jest) however, depending which features you're using, it's often not possible or means you're left unable to test integral code.
 
-Jest Webpack therefore attempts to solve the problem by ~~extending~~ replacing Jest's default `HasteModuleLoader` to support Webpack's internal module system.
+Jestpack therefore attempts to solve the problem by ~~extending~~ replacing Jest's default module loader to support Webpack's internal module system.
 
 ## Setup
 ### Jest Config
@@ -15,9 +15,9 @@ Jest Webpack therefore attempts to solve the problem by ~~extending~~ replacing 
 {
     ...
     "jest": {
-        "moduleLoader": "<rootDir>/node_modules/jest-webpack/ModuleLoader"
+        "moduleLoader": "<rootDir>/node_modules/jestpack/ModuleLoader"
     },
-    "jest-webpack": {
+    "jestpack": {
         "statsPath": "__bundled_tests__/stats.json", // relative to `process.cwd()`.
         "bundledTestsPattern": "__bundled_tests__/**", // glob pattern relative to `process.cwd()`
         "bundledTestsIgnorePattern": "" // glob pattern relative to `process.cwd()`
@@ -31,7 +31,7 @@ Jest Webpack therefore attempts to solve the problem by ~~extending~~ replacing 
 ```
 // webpack.config.js
 
-var JestWebpackPlugin = require('jest-webpack/Plugin');
+var JestWebpackPlugin = require('jestpack/Plugin');
 var StatsWebpackPlugin = require('stats-webpack-plugin');
 
 modue.exports = {
@@ -46,7 +46,7 @@ modue.exports = {
     preLoaders: [
         {
             test: /\.js$/,
-            loader: 'jest-webpack/ManualMockLoader'
+            loader: 'jestpack/ManualMockLoader'
         }
     ],
     ...

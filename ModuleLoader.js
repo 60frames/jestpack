@@ -9,14 +9,14 @@ var moduleMocker = require('jest-cli/src/lib/moduleMocker');
 var utils = require('jest-cli/src/lib/utils');
 var jest = require('jest-cli/src/jest');
 var semver = require('semver');
-var jestWebpackConfig = require('./config');
+var jestpackConfig = require('./config');
 
 var _configUnmockListRegExpCache = null;
 var webpackStats;
 var message;
 
 try {
-    webpackStats = require(path.join(process.cwd(), jestWebpackConfig.statsPath));
+    webpackStats = require(path.join(process.cwd(), jestpackConfig.statsPath));
 } catch (oh) {
     message = oh.message;
     oh.message = 'Cannot find Webpack stats. \nError: ' + message;
@@ -29,8 +29,8 @@ try {
  */
 function loadSimpleResourceMap() {
     return new Promise(function(resolve, reject) {
-        glob(jestWebpackConfig.bundledTestsPattern, {
-            ignore: jestWebpackConfig.bundledTestsIgnorePattern
+        glob(jestpackConfig.bundledTestsPattern, {
+            ignore: jestpackConfig.bundledTestsIgnorePattern
         }, function(err, files) {
             var resourceMap;
             if (err) {

@@ -1,10 +1,9 @@
 'use strict';
 
-var path = require('path');
 var glob = require('glob');
 var webpack = require('webpack');
 var StatsWebpackPlugin = require('stats-webpack-plugin');
-var JestWebpackPlugin = require('jest-webpack/Plugin');
+var JestWebpackPlugin = require('jestpack/Plugin');
 
 /**
  * Given a glob pattern returns the matched paths as an entry point object for Webpack.
@@ -32,7 +31,7 @@ module.exports = {
         preLoaders: [
             {
                 test: /\.js$/,
-                loader: 'jest-webpack/ManualMockLoader'
+                loader: 'jestpack/ManualMockLoader'
             }
         ],
         loaders: [

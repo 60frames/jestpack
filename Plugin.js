@@ -7,7 +7,7 @@ var ConstDependency = require('webpack/lib/dependencies/ConstDependency');
  * e.g. jest.dontMock('./foo') => jest.dontMock(1);
  * @constructor
  */
-function JestWebpackPlugin() {}
+function JestpackPlugin() {}
 
 /**
  * Resolves module paths.
@@ -29,7 +29,7 @@ function resolveArgument(expr, argIndex) {
  * Resolves Jest API `moduleName` arguments and updates the Webpack runtime.
  * @return {Undefined} undefined.
  */
-JestWebpackPlugin.prototype.apply = function(compiler) {
+JestpackPlugin.prototype.apply = function(compiler) {
 
     compiler.parser.plugin('call jest.dontMock', resolveArgument);
     compiler.parser.plugin('call jest.mock', resolveArgument);
@@ -54,17 +54,17 @@ JestWebpackPlugin.prototype.apply = function(compiler) {
             return 'jest._webpackRequire';
         });
 
-        // Make all references to the module cache global so 'jest-webpack/ModuleLoader'
+        // Make all references to the module cache global so 'jestpack/ModuleLoader'
         // can manage the object *and the reference*.
         compilation.mainTemplate.plugin('local-vars', function(source) {
             return source.replace('var installedModules', 'window.installedModules');
         });
 
-        // Expose `__webpack_require__` for 'jest-webpack/ModuleLoader'.
+        // Expose `__webpack_require__` for 'jestpack/ModuleLoader'.
         compilation.mainTemplate.plugin('startup', function(source) {
             return [
                 '',
-                '// Expose `__webpack_require__` for \'jest-webpack/ModuleLoader\'',
+                '// Expose `__webpack_require__` for \'jestpack/ModuleLoader\'',
                 'window.__webpack_require__ = __webpack_require__;',
                 source
             ].join('\n');
@@ -74,4 +74,4 @@ JestWebpackPlugin.prototype.apply = function(compiler) {
 
 };
 
-module.exports = JestWebpackPlugin;
+module.exports = JestpackPlugin;
