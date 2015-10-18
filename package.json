@@ -37,5 +37,6 @@
   },
   "devDependencies": {
     "coding-standards": "git+ssh://git@github.com:60frames/coding-standards.git#1.0.6"
-  }
+  },
+  "homepage": "https://github.com/60frames/jestpack#readme"
 }
