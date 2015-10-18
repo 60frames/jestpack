@@ -1,9 +1,13 @@
 {
   "name": "jestpack",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Jest Webpack integration",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/60frames/jestpack.git"
   },
   "engines": {
     "node": "0.8.x || 0.10.x || >=2"
