@@ -14,7 +14,7 @@ Jestpack therefore attempts to solve the problem by ~~extending~~ replacing Jest
 
 The first thing you'll need to do is tell Jest to use the Jestpack module loader and to look for tests in the `__bundled_tests__` directory:
 
-```
+```json
 // package.json
 {
     ...
@@ -30,7 +30,7 @@ Next you'll need to setup Webpack to build each test file as a separate entry po
 
 NOTE: Using a separate entry point per test suite allows Jest to run your tests in parallel processes.
 
-```
+```js
 // webpack.config.js
 {
     ...
@@ -47,7 +47,7 @@ NOTE: Using a separate entry point per test suite allows Jest to run your tests 
 
 Once your entry points have been defined you need to setup the output:
 
-```
+```js
 // webpack.config.js
 {
     ...
@@ -61,7 +61,7 @@ Once your entry points have been defined you need to setup the output:
 
 If you want to define manual `__mocks__` then you'll just need to let Webpack know how to bundle these using the `ManualMockLoader`:
 
-```
+```js
 // webpack.config.js
 {
     ...
@@ -77,7 +77,7 @@ If you want to define manual `__mocks__` then you'll just need to let Webpack kn
 
 Next you need to apply the Jestpack `Plugin` which transforms Jest's CommonJs API calls into Webpack module calls, i.e. `jest.dontMock('../foo')` becomes `jest.dontMock(1)`:
 
-```
+```js
 // webpack.config.js
 
 var JestpackPlugin = require('jestpack/Plugin');
@@ -93,7 +93,7 @@ var JestpackPlugin = require('jestpack/Plugin');
 
 Lastly you need to write out the Webpack stats.json to disk for use by the Jestpack ModuleLoader. By default Jestpack looks for stats.json in `./__bundled_tests__/stats.json`.
 
-```
+```js
 // webpack.config.js
 
 var StatsWebpackPlugin = require('stats-webpack-plugin');
@@ -111,7 +111,7 @@ A working example can be found here in the 'example' directory.
 ### Optimization
 Depending on the number of modules in your dependency graph you may experience incredibly slow builds when creating a separate entry point per test suite. This can be greatly optimized using Webpack's [`CommonsChunkPlugin`](TODO):
 
-```
+```js
 // webpack.config.js
 
 var webpack = require('webpack');
@@ -128,7 +128,7 @@ var webpack = require('webpack');
 
 Which can then be included via Jest's [`config.setupEnvScriptFile`](https://facebook.github.io/jest/docs/api.html#config-setupenvscriptfile-string):
 
-```
+```json
 // package.json
 {
     ...
@@ -141,7 +141,9 @@ Which can then be included via Jest's [`config.setupEnvScriptFile`](https://face
 
 In addition, if you actually need to do some environment setup you can get Webpack to execute any entry point via the `CommonsChunkPlugin`:
 
-```
+```js
+// webpack.config.js
+
 {
     ...
     entry: {
@@ -159,8 +161,9 @@ In addition, if you actually need to do some environment setup you can get Webpa
 
 If you need to do some setup after jasmine has loaded, e.g. define some global matchers, then you can use [`config.setupTestFrameworkScriptFile`](https://facebook.github.io/jest/docs/api.html#config-setuptestframeworkscriptfile-string) instead:
 
-```
+```json
 // package.json
+
 {
     ...
     "jest": {
@@ -174,8 +177,9 @@ If you need to do some setup after jasmine has loaded, e.g. define some global m
 
 If you're using the ['babel-loader'](https://github.com/babel/babel-loader) it's best not to include the runtime. If for some reason you need to then make sure it's in Jest's [`config.unmockedModulePathPatterns`](https://facebook.github.io/jest/docs/api.html#config-unmockedmodulepathpatterns-array-string):
 
-```
+```json
 // package.json
+
 {
     ...
     "jest": {
@@ -190,7 +194,7 @@ If you're using the ['babel-loader'](https://github.com/babel/babel-loader) it's
 
 If you're using [code splitting](http://webpack.github.io/docs/code-splitting.html) then you're better off disabling it for tests with the [`webpack.optimize.LimitChunkCountPlugin`](https://github.com/webpack/docs/wiki/list-of-plugins#limitchunkcountplugin):
 
-```
+```js
 // webpack.config.js
 
 var webpack = require('webpack');
@@ -209,7 +213,7 @@ var webpack = require('webpack');
 
 If you're using [css modules](https://github.com/webpack/css-loader#css-modules) you'll need to add the loader to Jest's [`config.unmockedModulePathPatterns`](https://facebook.github.io/jest/docs/api.html#config-unmockedmodulepathpatterns-array-string):
 
-```
+```json
 // package.json
 {
     ...
