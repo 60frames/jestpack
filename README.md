@@ -9,7 +9,7 @@ Jestpack attempts to solve this problem by ~~extending~~ replacing Jest's defaul
 > NOTE: Jestpack declares both `jest-cli` and `webpack` as peer dependencies meaning you must declare them both as either `devDependencies` or `dependencies` in your projects `package.json`.
 
 ## Setup
-Jestpack works by supplying pre-built test files to Jest so the first thing you'll want to do is tell Jest where it can exepect to find your soon-to-be-bundled test files:
+Jestpack works by supplying pre-built test files to Jest so the first thing you'll want to do is tell Jest where it can expect to find your soon-to-be-bundled test files:
 
 ```js
 // package.json
