@@ -1,11 +1,7 @@
 # Jestpack
-Unfortunately [Jest](https://facebook.github.io/jest/) doesn't play nicely with apps built using [Webpack](https://webpack.github.io/), especially those using some of Webpack's more useful but non-standard features such as [loaders](http://webpack.github.io/docs/loaders.html) and [code splitting](http://webpack.github.io/docs/code-splitting.html).
+Unfortunately [Jest doesn't play nicely with apps built using Webpack](http://stackoverflow.com/questions/31547587/testing-webpack-built-react-components-with-jest), especially those using some of Webpack's more useful but non-standard features including [loaders](http://webpack.github.io/docs/loaders.html) and [code splitting](http://webpack.github.io/docs/code-splitting.html).
 
-One solution is to [compile tests with Webpack](https://github.com/ColCh/jest-webpack) using [Jest's script pre-processor option](https://facebook.github.io/jest/docs/api.html#config-scriptpreprocessor-string) however Webpack compiles commonJS modules into an internal module system ready for the browser which Jest doesn't understand so dependencies cannot be mocked.
-
-Another solution is to [strip the non-standard Webpack features using the script pre-processor](https://github.com/atecarlos/webpack-babel-jest) however, depending which features you're using, it's often not possible or means you're left unable to test integral code.
-
-Jestpack therefore attempts to solve the problem by ~~extending~~ replacing Jest's default module loader to support Webpack's internal module system.
+Jestpack attempts to solve this problem by ~~extending~~ replacing Jest's default CommonJS module loader to support Webpack's browser ready module loader.
 
 ## Installation
 `npm install jestpack --save-dev`
@@ -13,20 +9,32 @@ Jestpack therefore attempts to solve the problem by ~~extending~~ replacing Jest
 > NOTE: Jestpack declares both `jest-cli` and `webpack` as peer dependencies meaning you must declare them both as either `devDependencies` or `dependencies` in your projects `package.json`.
 
 ## Setup
-The first thing you'll want to do is tell Jest to use the Jestpack module loader and where to look for your soon-to-be bundled tests:
+Jestpack works by supplying pre-built test files to Jest so the first thing you'll want to do is tell Jest where it can exepect to find your soon-to-be-bundled test files:
 
 ```js
 // package.json
 {
     ...
     "jest": {
-        "moduleLoader": "<rootDir>/node_modules/jestpack/ModuleLoader",
         "testPathDirs": ["<rootDir>/__bundled_tests__"]
     }
 }
 ```
 
-Next you'll want to setup your Webpack test config to output the bundled tests in the same `testPathDirs` directory:
+Next up you'll need to tell Jest to use the Jestpack module loader:
+
+```js
+// package.json
+{
+    ...
+    "jest": {
+        ...
+        "moduleLoader": "<rootDir>/node_modules/jestpack/ModuleLoader",
+    }
+}
+```
+
+Now you'll want to setup your Webpack test config to output the bundled tests in the same `testPathDirs` directory:
 
 ```js
 // webpack.config.js
