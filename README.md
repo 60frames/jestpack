@@ -228,6 +228,21 @@ If you're using [css modules](https://github.com/webpack/css-loader#css-modules)
 }
 ```
 
+### Jestpack config
+Similar to Jest, Jestpack supports config defined in your `package.json` which allows you to choose where Jestpack will look for your bundled tests, for example if you wanted to build your tests to `tests/dist` instead of `__bundled_tests__`:
+
+```js
+// package.json
+
+{
+    ...
+    "jestpack": {
+        "bundledTestsPattern": "tests/dist/**", // glob pattern relative to cwd, defaults to '__bundled_tests__/**'
+        "statsPath": "tests/dist/stats.json" // path relative to cwd, defaults to '__bundled_tests__/stats.json'
+    }
+}
+```
+
 ## Current Limitations
 
 - Code coverage isn't supported.
