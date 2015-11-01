@@ -14,7 +14,7 @@ Jestpack therefore attempts to solve the problem by ~~extending~~ replacing Jest
 
 The first thing you'll need to do is tell Jest to use the Jestpack module loader and to look for tests in the `__bundled_tests__` directory:
 
-```json
+```js
 // package.json
 {
     ...
@@ -22,7 +22,6 @@ The first thing you'll need to do is tell Jest to use the Jestpack module loader
         "moduleLoader": "<rootDir>/node_modules/jestpack/ModuleLoader",
         "testDirectoryName": "__bundled_tests__"
     }
-    ...
 }
 ```
 
@@ -32,15 +31,14 @@ NOTE: Using a separate entry point per test suite allows Jest to run your tests 
 
 ```js
 // webpack.config.js
-{
-    ...
+
+module.exports = {
     entry: {
         test1: './__tests__/test1',
         test2: './__tests__/test2',
         test3: './__tests__/test3'
         // etc.
     }
-    ...
 }
 
 ```
@@ -49,13 +47,13 @@ Once your entry points have been defined you need to setup the output:
 
 ```js
 // webpack.config.js
-{
+
+module.exports = {
     ...
     output: {
         path: '__bundled_tests__',
         filename: '[name].js'
     }
-    ...
 }
 ```
 
@@ -63,7 +61,8 @@ If you want to define manual `__mocks__` then you'll just need to let Webpack kn
 
 ```js
 // webpack.config.js
-{
+
+module.exports = {
     ...
     preLoaders: [
         {
@@ -71,7 +70,6 @@ If you want to define manual `__mocks__` then you'll just need to let Webpack kn
             loader: 'jestpack/ManualMockLoader'
         }
     ]
-    ...
 }
 ```
 
@@ -82,12 +80,11 @@ Next you need to apply the Jestpack `Plugin` which transforms Jest's CommonJs AP
 
 var JestpackPlugin = require('jestpack/Plugin');
 
-{
+module.exports = {
     ...
     plugins: [
         new JestpackPlugin()
     ]
-    ...
 }
 ```
 
@@ -98,7 +95,8 @@ Lastly you need to write out the Webpack stats.json to disk for use by the Jestp
 
 var StatsWebpackPlugin = require('stats-webpack-plugin');
 
-{
+module.exports = {
+    ...
     plugins: [
         ...
         new StatsWebpackPlugin('stats.json')
@@ -116,7 +114,8 @@ Depending on the number of modules in your dependency graph you may experience i
 
 var webpack = require('webpack');
 
-{
+modle.exports = {
+    ...
     plugins: [
         ...
         // This is telling Webpack to extract all dependencies that are used by 2 or more modules into './__bundled_tests__/common.js'
@@ -128,8 +127,9 @@ var webpack = require('webpack');
 
 Which can then be included via Jest's [`config.setupEnvScriptFile`](https://facebook.github.io/jest/docs/api.html#config-setupenvscriptfile-string):
 
-```json
+```js
 // package.json
+
 {
     ...
     "jest": {
@@ -144,7 +144,7 @@ In addition, if you actually need to do some environment setup you can get Webpa
 ```js
 // webpack.config.js
 
-{
+module.exports = {
     ...
     entry: {
         ...
@@ -161,7 +161,7 @@ In addition, if you actually need to do some environment setup you can get Webpa
 
 If you need to do some setup after jasmine has loaded, e.g. define some global matchers, then you can use [`config.setupTestFrameworkScriptFile`](https://facebook.github.io/jest/docs/api.html#config-setuptestframeworkscriptfile-string) instead:
 
-```json
+```js
 // package.json
 
 {
@@ -177,7 +177,7 @@ If you need to do some setup after jasmine has loaded, e.g. define some global m
 
 If you're using the ['babel-loader'](https://github.com/babel/babel-loader) it's best not to include the runtime. If for some reason you need to then make sure it's in Jest's [`config.unmockedModulePathPatterns`](https://facebook.github.io/jest/docs/api.html#config-unmockedmodulepathpatterns-array-string):
 
-```json
+```js
 // package.json
 
 {
@@ -199,7 +199,7 @@ If you're using [code splitting](http://webpack.github.io/docs/code-splitting.ht
 
 var webpack = require('webpack');
 
-{
+module.exports = {
     ...
     plugins: [
         ...
@@ -207,14 +207,14 @@ var webpack = require('webpack');
             maxChunks: 1
         })
     ]
-    ...
 }
 ```
 
 If you're using [css modules](https://github.com/webpack/css-loader#css-modules) you'll need to add the loader to Jest's [`config.unmockedModulePathPatterns`](https://facebook.github.io/jest/docs/api.html#config-unmockedmodulepathpatterns-array-string):
 
-```json
+```js
 // package.json
+
 {
     ...
     "jest": {
