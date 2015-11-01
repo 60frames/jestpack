@@ -16,6 +16,7 @@ The first thing you'll need to do is tell Jest to use the Jestpack module loader
 
 ```js
 // package.json
+
 {
     ...
     "jest": {
