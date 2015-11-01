@@ -1,3 +1,5 @@
+NOTE: README is WIP.
+
 # Jestpack
 
 Unfortunately [Jest](https://facebook.github.io/jest/) doesn't play nicely with apps built using [Webpack](https://webpack.github.io/), especially those using some of Webpack's more useful but non-standard features such as [loaders](http://webpack.github.io/docs/loaders.html) and [code splitting](http://webpack.github.io/docs/code-splitting.html).
@@ -106,13 +108,14 @@ var StatsWebpackPlugin = require('stats-webpack-plugin');
 
 A working example can be found here in the 'example' directory.
 
-### Optimisation
+### Optimization
 Depending on the number of modules in your dependency graph you may experience incredibly slow builds when creating a separate entry point per test suite. This can be greatly optimized using Webpack's [`CommonsChunkPlugin`](TODO):
 
 ```
+// webpack.config.js
+
 var webpack = require('webpack');
 
-// webpack.config.js
 {
     plugins: [
         ...
@@ -167,13 +170,58 @@ If you need to do some setup after jasmine has loaded, e.g. define some global m
 }
 ```
 
-## Tips
+### Tips
 
-- If using ['babel-loader'](https://github.com/babel/babel-loader) it's best not to include the runtime. If for some reason you need to then make sure 'babel-runtime' (<rootDir>/node_modules/babel-runtime) is in your [`jest.config.unmockedModulePathPatterns`](https://facebook.github.io/jest/docs/api.html#config-unmockedmodulepathpatterns-array-string).
+If you're using the ['babel-loader'](https://github.com/babel/babel-loader) it's best not to include the runtime. If for some reason you need to then make sure it's in Jest's [`config.unmockedModulePathPatterns`](https://facebook.github.io/jest/docs/api.html#config-unmockedmodulepathpatterns-array-string):
 
-- If using [code splitting](http://webpack.github.io/docs/code-splitting.html) it's best to limit the max chunks to 1 using the [`webpack.optimize.LimitChunkCountPlugin`](https://github.com/webpack/docs/wiki/list-of-plugins#limitchunkcountplugin) when testing.
+```
+// package.json
+{
+    ...
+    "jest": {
+        ...
+        "unmockedModulePathPatterns": [
+            ...
+            "<rootDir>/node_modules/babel-runtime"
+        ]
+    }
+}
+```
 
-- If using [css modules](https://github.com/webpack/css-loader#css-modules) with the css loader then it's best to add the 'css-loader' to your [`jest.config.unmockedModulePathPatterns`](https://facebook.github.io/jest/docs/api.html#config-unmockedmodulepathpatterns-array-string). In addition it's best not to hash the classNames so they can be consistently asserted.
+If you're using [code splitting](http://webpack.github.io/docs/code-splitting.html) then you're better off disabling it for tests with the [`webpack.optimize.LimitChunkCountPlugin`](https://github.com/webpack/docs/wiki/list-of-plugins#limitchunkcountplugin):
+
+```
+// webpack.config.js
+
+var webpack = require('webpack');
+
+{
+    ...
+    plugins: [
+        ...
+        new webpack.optimize.LimitChunkCountPlugin({
+            maxChunks: 1
+        })
+    ]
+    ...
+}
+```
+
+If you're using [css modules](https://github.com/webpack/css-loader#css-modules) you'll need to add the loader to Jest's [`config.unmockedModulePathPatterns`](https://facebook.github.io/jest/docs/api.html#config-unmockedmodulepathpatterns-array-string):
+
+```
+// package.json
+{
+    ...
+    "jest": {
+        ...
+        "unmockedModulePathPatterns": [
+            ...
+            "<rootDir>/node_modules/css-loader"
+        ]
+    }
+}
+```
 
 ## Current Limitations
 
