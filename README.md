@@ -9,52 +9,161 @@ Another solution is to [strip the non-standard Webpack features using the script
 Jestpack therefore attempts to solve the problem by ~~extending~~ replacing Jest's default module loader to support Webpack's internal module system.
 
 ## Setup
-### Jest Config
+
+The first thing you'll need to do is tell Jest to use the Jestpack module loader and to look for tests in the `__bundled_tests__` directory:
+
 ```
 // package.json
 {
     ...
     "jest": {
-        "moduleLoader": "<rootDir>/node_modules/jestpack/ModuleLoader"
-    },
-    "jestpack": {
-        "statsPath": "__bundled_tests__/stats.json", // relative to `process.cwd()`.
-        "bundledTestsPattern": "__bundled_tests__/**", // glob pattern relative to `process.cwd()`
-        "bundledTestsIgnorePattern": "" // glob pattern relative to `process.cwd()`
+        "moduleLoader": "<rootDir>/node_modules/jestpack/ModuleLoader",
+        "testDirectoryName": "__bundled_tests__"
+    }
+    ...
+}
+```
+
+Next you'll need to setup Webpack to build each test file as a separate entry point:
+
+NOTE: Using a separate entry point per test suite allows Jest to run your tests in parallel processes.
+
+```
+// webpack.config.js
+{
+    ...
+    entry: {
+        test1: './__tests__/test1',
+        test2: './__tests__/test2',
+        test3: './__tests__/test3'
+        // etc.
     }
     ...
 }
 
 ```
 
-### Webpack Config
+Once your entry points have been defined you need to setup the output:
+
 ```
 // webpack.config.js
-
-var JestWebpackPlugin = require('jestpack/Plugin');
-var StatsWebpackPlugin = require('stats-webpack-plugin');
-
-modue.exports = {
+{
     ...
-    // Create a separate entry point per test to isolate them.
-    entry: {
-        foo: './__tests__/foo.js',
-        bar: './__tests__/bar.js',
-        baz: './__tests__/baz.js'
-    },
+    output: {
+        path: '__bundled_tests__',
+        filename: '[name].js'
+    }
+    ...
+}
+```
+
+If you want to define manual `__mocks__` then you'll just need to let Webpack know how to bundle these using the `ManualMockLoader`:
+
+```
+// webpack.config.js
+{
     ...
     preLoaders: [
         {
             test: /\.js$/,
             loader: 'jestpack/ManualMockLoader'
         }
-    ],
-    ...
-    plugins: [
-        new JestWebpackPlugin(),
-        new StatsPlugin('stats.json')
     ]
     ...
+}
+```
+
+Next you need to apply the Jestpack `Plugin` which transforms Jest's CommonJs API calls into Webpack module calls, i.e. `jest.dontMock('../foo')` becomes `jest.dontMock(1)`:
+
+```
+// webpack.config.js
+
+var JestpackPlugin = require('jestpack/Plugin');
+
+{
+    ...
+    plugins: [
+        new JestpackPlugin()
+    ]
+    ...
+}
+```
+
+Lastly you need to write out the Webpack stats.json to disk for use by the Jestpack ModuleLoader. By default Jestpack looks for stats.json in `./__bundled_tests__/stats.json`.
+
+```
+// webpack.config.js
+
+var StatsWebpackPlugin = require('stats-webpack-plugin');
+
+{
+    plugins: [
+        ...
+        new StatsWebpackPlugin('stats.json')
+    ]
+}
+```
+
+A working example can be found here in the 'example' directory.
+
+### Optimisation
+Depending on the number of modules in your dependency graph you may experience incredibly slow builds when creating a separate entry point per test suite. This can be greatly optimized using Webpack's [`CommonsChunkPlugin`](TODO):
+
+```
+var webpack = require('webpack');
+
+// webpack.config.js
+{
+    plugins: [
+        ...
+        // This is telling Webpack to extract all dependencies that are used by 2 or more modules into './__bundled_tests__/common.js'
+        new webpack.optimize.CommonsChunkPlugin('common.js', 2)
+    ]
+}
+
+```
+
+Which can then be included via Jest's [`config.setupEnvScriptFile`](https://facebook.github.io/jest/docs/api.html#config-setupenvscriptfile-string):
+
+```
+// package.json
+{
+    ...
+    "jest": {
+        ...
+        "setupEnvScriptFile": "<rootDir>/__bundled_tests__/common.js"
+    }
+}
+```
+
+In addition, if you actually need to do some environment setup you can get Webpack to execute any entry point via the `CommonsChunkPlugin`:
+
+```
+{
+    ...
+    entry: {
+        ...
+        setup: './setup.js'
+    },
+    ...
+    plugins: [
+        ...
+        // When the common.js chunk is included it will execute the 'setup' entry point.
+        new webpack.optimize.CommonsChunkPlugin('setup', 'common.js', 2)
+    ]
+}
+```
+
+If you need to do some setup after jasmine has loaded, e.g. define some global matchers, then you can use [`config.setupTestFrameworkScriptFile`](https://facebook.github.io/jest/docs/api.html#config-setuptestframeworkscriptfile-string) instead:
+
+```
+// package.json
+{
+    ...
+    "jest": {
+        ...
+        "setupTestFrameworkScriptFile": "<rootDir>/__bundled_tests__/common.js"
+    }
 }
 ```
 
@@ -68,5 +177,4 @@ modue.exports = {
 
 ## Current Limitations
 
-- `config.setupEnvScriptFile` and `config.setupTestFrameworkScriptFile` aren't supported.
 - Code coverage isn't supported.
