@@ -58,7 +58,7 @@ module.exports = {
 }
 ```
 
-If you want to define manual `__mocks__` then you'll just need to let Webpack know how to bundle these using the `ManualMockLoader`:
+If you want to define manual `__mocks__` then you'll need to let Webpack know how to bundle these using the `ManualMockLoader`:
 
 ```js
 // webpack.config.js
