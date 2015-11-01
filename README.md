@@ -89,7 +89,7 @@ module.exports = {
 }
 ```
 
-Lastly you need to write out the Webpack stats.json to disk for use by the Jestpack ModuleLoader. By default Jestpack looks for stats.json in `./__bundled_tests__/stats.json`.
+Lastly you need to write out the Webpack stats.json to disk for use by the Jestpack ModuleLoader. By default Jestpack looks in `./__bundled_tests__/stats.json`.
 
 ```js
 // webpack.config.js
