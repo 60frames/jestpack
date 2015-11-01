@@ -17,6 +17,7 @@
   "license": "ISC",
   "jest": {
     "moduleLoader": "<rootDir>/node_modules/jestpack/ModuleLoader",
+    "testPathDirs": ["<rootDir>/__bundled_tests__"],
     "unmockedModulePathPatterns": [
       "<rootDir>/node_modules/react",
       "<rootDir>/node_modules/css-loader",

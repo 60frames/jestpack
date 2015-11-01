@@ -9,29 +9,40 @@ var moduleMocker = require('jest-cli/src/lib/moduleMocker');
 var utils = require('jest-cli/src/lib/utils');
 var jest = require('jest-cli/src/jest');
 var semver = require('semver');
-var jestpackConfig = require('./config');
 
 var _configUnmockListRegExpCache = null;
 var webpackStats;
 var message;
 
-try {
-    webpackStats = require(path.join(process.cwd(), jestpackConfig.statsPath));
-} catch (oh) {
-    message = oh.message;
-    oh.message = 'Cannot find Webpack stats. \nError: ' + message;
-    throw oh;
-}
-
 /**
  * Builds simple resource map containing only the bundled test files.
+ * @param  {Object}  The Jest config.
  * @return {Promise} The 'node-haste'(ish) resource map.
  */
-function loadSimpleResourceMap() {
+function loadSimpleResourceMap(config) {
     return new Promise(function(resolve, reject) {
-        glob(jestpackConfig.bundledTestsPattern, {
-            ignore: jestpackConfig.bundledTestsIgnorePattern
-        }, function(err, files) {
+
+        // Convert Jest config into glob pattern.
+        var testPathDirs,
+            testFileExtensions,
+            generatedGlob;
+
+        if (config.testPathDirs.length === 1) {
+            testPathDirs = config.testPathDirs[0];
+        } else {
+            testPathDirs = '{' + config.testPathDirs.join(',') + '}';
+        }
+
+        if (config.testFileExtensions.length === 1) {
+            testFileExtensions = config.testFileExtensions[0];
+        } else {
+            testFileExtensions = '{' + config.testFileExtensions.join(',') + '}';
+        }
+
+        generatedGlob = testPathDirs + '/'
+            + '**/' + config.testDirectoryName + '/**/*.' + testFileExtensions;
+
+        glob(generatedGlob, function(err, files) {
             var resourceMap;
             if (err) {
                 reject(err);
@@ -52,6 +63,31 @@ function loadSimpleResourceMap() {
 }
 
 /**
+ * Checks the root of each `config.testPathDirs` directory for the Webpack `stats.json`.
+ * @param  {Object} The Jest config.
+ * @return {Object} The Webpack stats json.
+ */
+function getWebpackStats(config) {
+
+    var statsPaths = config.testPathDirs.map(function(testPathDir) {
+        return path.join(testPathDir, 'stats.json');
+    });
+
+    statsPaths.some(function(statsPath) {
+        try {
+            webpackStats = require(statsPath);
+        } catch (oh) {}
+        return webpackStats;
+    });
+
+    if (!webpackStats) {
+        throw new Error('Cannot find Webpack stats in: \n' + statsPaths.join('\n'));
+    }
+
+    return webpackStats;
+}
+
+/**
  * Adds support for Webpack's internal `__webpack_require__` module loader. Designed
  * to replace the default `HasteModuleLoader` used by Jest.
  * @constructor
@@ -67,6 +103,10 @@ function JestModuleLoader(config, environment, resourceMap) {
     this._configShouldMockModuleNames = {};
     this._requiringActual = false;
     this._manualMockMap = {};
+
+    if (!webpackStats) {
+        webpackStats = getWebpackStats(config);
+    }
 
     if (_configUnmockListRegExpCache === null) {
         // Node must have been run with --harmony in order for WeakMap to be
