@@ -1,7 +1,7 @@
 # Jestpack
-Unfortunately [Jest doesn't play nicely with apps built using Webpack](http://stackoverflow.com/questions/31547587/testing-webpack-built-react-components-with-jest), especially those using some of Webpack's more useful but non-standard features including [loaders](http://webpack.github.io/docs/loaders.html) and [code splitting](http://webpack.github.io/docs/code-splitting.html).
+Unfortunately [Jest doesn't play nicely with Webpack](http://stackoverflow.com/questions/31547587/testing-webpack-built-react-components-with-jest), especially when using some of Webpack's more useful features such as [loaders](http://webpack.github.io/docs/loaders.html) or [code splitting](http://webpack.github.io/docs/code-splitting.html).
 
-Jestpack attempts to solve this problem by ~~extending~~ replacing Jest's default CommonJS module loader to support Webpack's browser ready module loader.
+Jestpack attempts to solve this problem by ~~extending~~ replacing Jest's default module loader to support Webpack's internal module system.
 
 ## Installation
 `npm install jestpack --save-dev`
@@ -21,7 +21,7 @@ Jestpack works by supplying pre-built test files to Jest so the first thing you'
 }
 ```
 
-Next up you'll need to tell Jest to use the Jestpack module loader:
+Then you'll need to get Jest to use the Jestpack module loader:
 
 ```js
 // package.json
@@ -34,7 +34,7 @@ Next up you'll need to tell Jest to use the Jestpack module loader:
 }
 ```
 
-Now you'll want to setup your Webpack test config to output the bundled tests in the same `testPathDirs` directory:
+Now you're ready to setup your Webpack config by first specifiying the output directory:
 
 ```js
 // webpack.config.js
@@ -46,7 +46,7 @@ module.exports = {
 }
 ```
 
-Then you'll need to setup your Webpack config to build each test as a separate entry point:
+And then getting Webpack to build each test as a separate entry point:
 
 ```js
 // webpack.config.js
@@ -60,11 +60,12 @@ module.exports = {
     }
 }
 ```
+
 > NOTE: Using a separate entry point per test suite allows Jest to run your tests in parallel processes!
 
 > NOTE: The /example demonstrates how the entry points could be dynamically generated.
 
-This next step is optional depending whether you intend to define manual `__mocks__`. If you do then you need to run your modules through the manual mock loader:
+If you intend to define manual `__mocks__` then you need to run your modules through the manual mock loader:
 
 ```js
 // webpack.config.js
@@ -79,7 +80,7 @@ module.exports = {
 }
 ```
 
-Next up you need to apply the Jestpack plugin which transforms Jest's CommonJs API calls into something Webpack can understand, i.e. `jest.dontMock('../foo')` becomes `jest.dontMock(1)`:
+Finally, you need to apply the Jestpack plugin which transforms Jest's CommonJs API calls into something Webpack can understand, i.e. `jest.dontMock('../foo')` becomes `jest.dontMock(1)`:
 
 ```js
 // webpack.config.js
@@ -93,7 +94,7 @@ module.exports = {
 }
 ```
 
-Lastly you need to write the Webpack `stats.json` to a file in the root of your `jest.config.testPathDirs` directory. So in this case `__bundled_tests__/stats.json`:
+And save the `stats.json` in the root of your `config.testPathDirs` directory. So in this case `__bundled_tests__/stats.json`:
 
 ```js
 // webpack.config.js
@@ -107,6 +108,10 @@ module.exports = {
     ]
 }
 ```
+
+Tests can then be run by building your tests and running Jest:
+
+`webpack && jest`
 
 > NOTE: A complete working configuration can be found in the /example directory.
 
@@ -131,7 +136,7 @@ modle.exports = {
 
 ```
 
-Which can then be included via [`jest.config.setupEnvScriptFile`](https://facebook.github.io/jest/docs/api.html#config-setupenvscriptfile-string):
+Which can then be included via Jest's [`config.setupEnvScriptFile`](https://facebook.github.io/jest/docs/api.html#config-setupenvscriptfile-string):
 
 ```js
 // package.json
@@ -144,7 +149,7 @@ Which can then be included via [`jest.config.setupEnvScriptFile`](https://facebo
 }
 ```
 
-In addition, if you actually need to do some environment setup you can get Webpack to execute any entry point via the `CommonsChunkPlugin`:
+In addition, if you actually need to do some environment setup you can get the common chunk to execute an entry point like this:
 
 ```js
 // webpack.config.js
@@ -167,7 +172,7 @@ module.exports = {
 }
 ```
 
-If you need to do some setup after Jasmine has loaded, e.g. define some global matchers, then you can use [`config.setupTestFrameworkScriptFile`](https://facebook.github.io/jest/docs/api.html#config-setuptestframeworkscriptfile-string) instead:
+If you need to do some setup after Jasmine has loaded, e.g. define some global matchers, then you can use Jest's [`config.setupTestFrameworkScriptFile`](https://facebook.github.io/jest/docs/api.html#config-setuptestframeworkscriptfile-string) instead:
 
 ```js
 // package.json
@@ -182,7 +187,7 @@ If you need to do some setup after Jasmine has loaded, e.g. define some global m
 
 ### Tips
 
-If you're using the ['babel-loader'](https://github.com/babel/babel-loader) it's best not to include the runtime. If for some reason you need to then make sure it's in Jest's [`config.unmockedModulePathPatterns`](https://facebook.github.io/jest/docs/api.html#config-unmockedmodulepathpatterns-array-string):
+If you're using the [babel-loader](https://github.com/babel/babel-loader) it's best not to include the runtime. If for some reason you need to then make sure it's in Jest's [`config.unmockedModulePathPatterns`](https://facebook.github.io/jest/docs/api.html#config-unmockedmodulepathpatterns-array-string):
 
 ```js
 // package.json
@@ -198,7 +203,7 @@ If you're using the ['babel-loader'](https://github.com/babel/babel-loader) it's
 }
 ```
 
-If you're using [code splitting](http://webpack.github.io/docs/code-splitting.html) then you're better off disabling it for tests with the [`webpack.optimize.LimitChunkCountPlugin`](https://github.com/webpack/docs/wiki/list-of-plugins#limitchunkcountplugin):
+If you're using [code splitting](http://webpack.github.io/docs/code-splitting.html) then you're better off disabling it for tests with Webpack's [`LimitChunkCountPlugin`](https://github.com/webpack/docs/wiki/list-of-plugins#limitchunkcountplugin):
 
 ```js
 // webpack.config.js
