@@ -64,8 +64,7 @@ JestpackPlugin.prototype.apply = function(compiler) {
         compilation.mainTemplate.plugin('startup', function(source) {
             return [
                 '',
-                '// Expose `__webpack_require__` for \'jestpack/ModuleLoader\'',
-                'window.__webpack_require__ = __webpack_require__;',
+                'jest._setupWebpackRequire(__webpack_require__);',
                 source
             ].join('\n');
         });

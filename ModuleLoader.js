@@ -200,8 +200,10 @@ JestModuleLoader.prototype.requireModule = function(currPath, moduleName) {
 
     var moduleObj;
 
-    if (moduleName && this._builtInModules.hasOwnProperty(moduleName)) {
-        moduleObj = this._builtInModules[moduleName](currPath);
+    if (moduleName === 'jest-runtime') {
+        moduleObj = {
+            exports: this.getJestRuntime()
+        };
     } else {
         moduleObj = {
             __filename: currPath,
@@ -227,7 +229,7 @@ JestModuleLoader.prototype._execModule = function(moduleObj) {
         // `module`, `exports`, `require`, `__dirname` and `__filename` aren't
         // necessary here as we're only executing a Webpack bundle.
         global: this._environment.global,
-        jest: this._builtInModules['jest-runtime'](modulePath).exports
+        jest: this.getJestRuntime()
     };
 
     // Might as well support 0.4.x and 0.5.x in order to support Node 0.10.x and 4.0.x
@@ -261,163 +263,182 @@ JestModuleLoader.prototype.requireModuleOrMock = function() {
  * @return {Object}     The Jest runtime.
  */
 JestModuleLoader.prototype.getJestRuntime = function() {
-    return this._builtInModules['jest-runtime']().exports;
+    if (!this._jestRuntime) {
+        this._jestRuntime = this._createRuntime();
+    }
+    return this._jestRuntime;
+};
+
+// TODO: see if we can inherit the non path-dependent runtime methods.
+JestModuleLoader.prototype._createRuntime = function() {
+    var runtime = {
+        addMatchers: function(matchers) {
+            var jasmine = this._environment.global.jasmine;
+            var spec = jasmine.getEnv().currentSpec;
+            spec.addMatchers(matchers);
+        }.bind(this),
+
+        autoMockOff: function() {
+            this._shouldAutoMock = false;
+            return runtime;
+        }.bind(this),
+
+        autoMockOn: function() {
+            this._shouldAutoMock = true;
+            return runtime;
+        }.bind(this),
+
+        clearAllTimers: function() {
+            this._environment.fakeTimers.clearAllTimers();
+        }.bind(this),
+
+        currentTestPath: function() {
+            return this._environment.testFilePath;
+        }.bind(this),
+
+        dontMock: function(moduleId) {
+            this._explicitShouldMock[moduleId] = false;
+            return runtime;
+        }.bind(this),
+
+        // This isn't documented...
+        getTestEnvData: function() {
+            var frozenCopy = {};
+            // Make a shallow copy only because a deep copy seems like
+            // overkill..
+            Object.keys(this._config.testEnvData).forEach(function(key) {
+                frozenCopy[key] = this._config.testEnvData[key];
+            }, this);
+            Object.freeze(frozenCopy);
+            return frozenCopy;
+        }.bind(this),
+
+        genMockFromModule: function(moduleId) {
+            return this._generateMock(moduleId, true);
+        }.bind(this),
+
+        genMockFunction: function() {
+            return moduleMocker.getMockFunction();
+        },
+
+        mock: function(moduleId) {
+            this._explicitShouldMock[moduleId] = true;
+            return runtime;
+        }.bind(this),
+
+        /* eslint-disable */
+        resetModuleRegistry: function() {
+            var globalMock;
+            for (var key in this._environment.global) {
+                globalMock = this._environment.global[key];
+                if ((typeof globalMock === 'object' && globalMock !== null)
+                    || typeof globalMock === 'function') {
+                    globalMock._isMockFunction && globalMock.mockClear();
+                }
+            }
+
+            if (this._environment.global.mockClearTimers) {
+                this._environment.global.mockClearTimers();
+            }
+
+            this.resetModuleRegistry();
+
+            return runtime;
+        }.bind(this),
+        /* eslint-enable */
+
+        runAllTicks: function() {
+            this._environment.fakeTimers.runAllTicks();
+        }.bind(this),
+
+        runAllImmediates: function() {
+            this._environment.fakeTimers.runAllImmediates();
+        }.bind(this),
+
+        runAllTimers: function() {
+            this._environment.fakeTimers.runAllTimers();
+        }.bind(this),
+
+        runOnlyPendingTimers: function() {
+            this._environment.fakeTimers.runOnlyPendingTimers();
+        }.bind(this),
+
+        setMock: function(moduleId, moduleExports) {
+            this._explicitShouldMock[moduleId] = true;
+            this._explicitlySetMocks[moduleId] = moduleExports;
+            return runtime;
+        }.bind(this),
+
+        useFakeTimers: function() {
+            this._environment.fakeTimers.useFakeTimers();
+        }.bind(this),
+
+        useRealTimers: function() {
+            this._environment.fakeTimers.useRealTimers();
+        }.bind(this),
+
+        /**
+         * See `this._setupWebpackRequire`.
+         */
+        _setupWebpackRequire: function(__webpack_require__) {
+            this._setupWebpackRequire(runtime, __webpack_require__);
+        }.bind(this),
+
+        /**
+         * This is the 'patched' require passed around in the compiled
+         * Webpack build as `__webpack_require__`.
+         * @param  {Number} moduleId The Webpack moduleId.
+         * @return {*}               The module or mock.
+         */
+        _webpackRequire: function(moduleId) {
+            return this._webpackRequireModuleOrMock(moduleId);
+        }.bind(this),
+
+        /**
+         * Registers a manual mock (used by the `ManualMockLoader`).
+         * @param  {Number} moduleId     The Webpack moduleId.
+         * @param  {Number} mockModuleId The Webpack mock moduleId.
+         */
+        _registerManualMock: function(moduleId, mockModuleId) {
+            this._manualMockMap[moduleId] = mockModuleId;
+        }.bind(this)
+    };
+
+    runtime._webpackRequire.requireActual = function(moduleId) {
+        var module;
+        this._requiringActual = true;
+        module = this._webpackRequireModule(moduleId);
+        this._requiringActual = false;
+        return module;
+    }.bind(this);
+
+    runtime.genMockFn = runtime.genMockFunction;
+
+    return runtime;
 };
 
 /**
  * Clears module and mock cache's.
- * NOTE: Not sure why the built in modules are reset here as they're never actually
- * cached, monkey see...
  */
 JestModuleLoader.prototype.resetModuleRegistry = function() {
     this._mockRegistry = {};
     this._environment.global.installedModules = {};
-    // TODO: see if we can inherit the non path-dependent runtime methods or at least
-    // not bother re-evaluating the runtime every time as the `currPath` isn't necessary
-    // with Webpack's normalized moduleIds.
-    this._builtInModules = {
-        'jest-runtime': function() {
-            var jestRuntime = {
-                exports: {
-                    addMatchers: function(matchers) {
-                        var jasmine = this._environment.global.jasmine;
-                        var spec = jasmine.getEnv().currentSpec;
-                        spec.addMatchers(matchers);
-                    }.bind(this),
+};
 
-                    autoMockOff: function() {
-                        this._shouldAutoMock = false;
-                        return jestRuntime.exports;
-                    }.bind(this),
-
-                    autoMockOn: function() {
-                        this._shouldAutoMock = true;
-                        return jestRuntime.exports;
-                    }.bind(this),
-
-                    clearAllTimers: function() {
-                        this._environment.fakeTimers.clearAllTimers();
-                    }.bind(this),
-
-                    currentTestPath: function() {
-                        return this._environment.testFilePath;
-                    }.bind(this),
-
-                    dontMock: function(moduleId) {
-                        this._explicitShouldMock[moduleId] = false;
-                        return jestRuntime.exports;
-                    }.bind(this),
-
-                    // This isn't documented...
-                    getTestEnvData: function() {
-                        var frozenCopy = {};
-                        // Make a shallow copy only because a deep copy seems like
-                        // overkill..
-                        Object.keys(this._config.testEnvData).forEach(function(key) {
-                            frozenCopy[key] = this._config.testEnvData[key];
-                        }, this);
-                        Object.freeze(frozenCopy);
-                        return frozenCopy;
-                    }.bind(this),
-
-                    genMockFromModule: function(moduleId) {
-                        return this._generateMock(moduleId, true);
-                    }.bind(this),
-
-                    genMockFunction: function() {
-                        return moduleMocker.getMockFunction();
-                    },
-
-                    mock: function(moduleId) {
-                        this._explicitShouldMock[moduleId] = true;
-                        return jestRuntime.exports;
-                    }.bind(this),
-
-                    /* eslint-disable */
-                    resetModuleRegistry: function() {
-                        var globalMock;
-                        for (var key in this._environment.global) {
-                            globalMock = this._environment.global[key];
-                            if ((typeof globalMock === 'object' && globalMock !== null)
-                                || typeof globalMock === 'function') {
-                                globalMock._isMockFunction && globalMock.mockClear();
-                            }
-                        }
-
-                        if (this._environment.global.mockClearTimers) {
-                            this._environment.global.mockClearTimers();
-                        }
-
-                        this.resetModuleRegistry();
-
-                        return jestRuntime.exports;
-                    }.bind(this),
-                    /* eslint-enable */
-
-                    runAllTicks: function() {
-                        this._environment.fakeTimers.runAllTicks();
-                    }.bind(this),
-
-                    runAllImmediates: function() {
-                        this._environment.fakeTimers.runAllImmediates();
-                    }.bind(this),
-
-                    runAllTimers: function() {
-                        this._environment.fakeTimers.runAllTimers();
-                    }.bind(this),
-
-                    runOnlyPendingTimers: function() {
-                        this._environment.fakeTimers.runOnlyPendingTimers();
-                    }.bind(this),
-
-                    setMock: function(moduleId, moduleExports) {
-                        this._explicitShouldMock[moduleId] = true;
-                        this._explicitlySetMocks[moduleId] = moduleExports;
-                        return jestRuntime.exports;
-                    }.bind(this),
-
-                    useFakeTimers: function() {
-                        this._environment.fakeTimers.useFakeTimers();
-                    }.bind(this),
-
-                    useRealTimers: function() {
-                        this._environment.fakeTimers.useRealTimers();
-                    }.bind(this),
-
-                    /**
-                     * This is the 'patched' require passed around in the compiled
-                     * Webpack build as `__webpack_require__`.
-                     * @param  {Number} moduleId The Webpack moduleId.
-                     * @return {*}               The module or mock.
-                     */
-                    _webpackRequire: function(moduleId) {
-                        return this._webpackRequireModuleOrMock(moduleId);
-                    }.bind(this),
-
-                    /**
-                     * Registers a manual mock (used by the `ManualMockLoader`).
-                     * @param  {Number} moduleId     The Webpack moduleId.
-                     * @param  {Number} mockModuleId The Webpack mock moduleId.
-                     */
-                    _registerManualMock: function(moduleId, mockModuleId) {
-                        this._manualMockMap[moduleId] = mockModuleId;
-                    }.bind(this)
-                }
-            };
-
-            jestRuntime.exports._webpackRequire.requireActual = function(moduleId) {
-                var module;
-                this._requiringActual = true;
-                module = this._webpackRequireModule(moduleId);
-                this._requiringActual = false;
-                return module;
-            }.bind(this);
-
-            jestRuntime.exports.genMockFn = jestRuntime.exports.genMockFunction;
-
-            return jestRuntime;
-        }.bind(this)
-    };
+/**
+ * Stores reference to the real `__webpack_require__` and copies static methods 
+ * to the wrapping `jest._webpackRequire`.
+ * @param  {Object}   moduleId The Jest runtime.
+ * @param  {Function} moduleId The real Webpack require.
+ */
+JestModuleLoader.prototype._setupWebpackRequire = function(runtime, __webpack_require__) {
+    var prop;
+    this.__webpack_require__ = __webpack_require__;
+    for (prop in __webpack_require__) {
+        if (__webpack_require__.hasOwnProperty(prop)) {
+            runtime._webpackRequire[prop] = __webpack_require__[prop];
+        }
+    }
 };
 
 /**
@@ -438,10 +459,10 @@ JestModuleLoader.prototype._webpackRequireModuleOrMock = function(moduleId) {
  * @return {*}               The module.
  */
 JestModuleLoader.prototype._webpackRequireModule = function() {
-    var webpackRequire = this._environment.global.__webpack_require__;
+    var webpackRequire = this.__webpack_require__;
 
     if (!webpackRequire) {
-        throw new Error('`__webpack_require__` has not been defined in the JSDom environment.');
+        throw new Error('`__webpack_require__` has not been defined.');
     }
 
     return webpackRequire.apply(void 0, arguments);

@@ -14,7 +14,7 @@ function getEntryPoints(globPattern) {
     var testFiles = glob.sync(globPattern);
     var entryPoints = {};
     testFiles.forEach(function(file) {
-        entryPoints[file] = './' + file;
+        entryPoints[file.replace(/\.js$/, '')] = './' + file;
     });
     return entryPoints;
 }
@@ -25,7 +25,7 @@ module.exports = {
     entry: getEntryPoints('src/**/__tests__/*'),
     output: {
         path: '__bundled_tests__',
-        filename: '[name]'
+        filename: '[name].js'
     },
     module: {
         preLoaders: [
