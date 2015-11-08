@@ -1,31 +1,27 @@
 'use strict';
 
-var fs = require('fs');
-var path = require('path');
-var _ = require('underscore');
-var Promise = require('bluebird');
-var glob = require('glob');
-var moduleMocker = require('jest-cli/src/lib/moduleMocker');
-var utils = require('jest-cli/src/lib/utils');
-var jest = require('jest-cli/src/jest');
-var semver = require('semver');
+const fs = require('fs');
+const path = require('path');
+const _ = require('underscore');
+const glob = require('glob');
+const moduleMocker = require('jest-cli/src/lib/moduleMocker');
+const utils = require('jest-cli/src/lib/utils');
 
-var _configUnmockListRegExpCache = null;
-var webpackStats;
-var message;
+let _configUnmockListRegExpCache = null;
+let webpackStats;
 
 /**
  * Builds simple resource map containing only the bundled test files.
- * @param  {Object}  The Jest config.
- * @return {Promise} The 'node-haste'(ish) resource map.
+ * @param  {Object}  config The Jest config.
+ * @return {Promise}        The 'node-haste'(ish) resource map.
  */
 function loadSimpleResourceMap(config) {
-    return new Promise(function(resolve, reject) {
+    return new Promise((resolve, reject) => {
 
         // Convert Jest config into glob pattern.
-        var testPathDirs,
-            testFileExtensions,
-            generatedGlob;
+        let testPathDirs;
+        let testFileExtensions;
+        let generatedGlob;
 
         if (config.testPathDirs.length === 1) {
             testPathDirs = config.testPathDirs[0];
@@ -39,19 +35,19 @@ function loadSimpleResourceMap(config) {
             testFileExtensions = '{' + config.testFileExtensions.join(',') + '}';
         }
 
-        generatedGlob = testPathDirs + '/'
-            + '**/' + config.testDirectoryName + '/**/*.' + testFileExtensions;
+        generatedGlob = testPathDirs + '/' +
+            '**/' + config.testDirectoryName + '/**/*.' + testFileExtensions;
 
-        glob(generatedGlob, function(err, files) {
-            var resourceMap;
+        glob(generatedGlob, (err, files) => {
             if (err) {
                 reject(err);
             } else {
+                let resourceMap;
                 resourceMap = {
                     resourcePathMap: {}
                 };
-                files.forEach(function(file) {
-                    var fullPath = path.resolve(file);
+                files.forEach(file => {
+                    let fullPath = path.resolve(file);
                     resourceMap.resourcePathMap[fullPath] = {
                         path: fullPath
                     };
@@ -64,20 +60,22 @@ function loadSimpleResourceMap(config) {
 
 /**
  * Checks the root of each `config.testPathDirs` directory for the Webpack `stats.json`.
- * @param  {Object} The Jest config.
- * @return {Object} The Webpack stats json.
+ * @param  {Object} config The Jest config.
+ * @return {Object}        The Webpack stats json.
  */
 function getWebpackStats(config) {
 
-    var statsPaths = config.testPathDirs.map(function(testPathDir) {
+    let statsPaths = config.testPathDirs.map(function(testPathDir) {
         return path.join(testPathDir, 'stats.json');
     });
 
     statsPaths.some(function(statsPath) {
         try {
             webpackStats = require(statsPath);
-        } catch (oh) {}
-        return webpackStats;
+        } catch (oh) {
+            // not found
+        }
+        return !!webpackStats;
     });
 
     if (!webpackStats) {
@@ -90,158 +88,144 @@ function getWebpackStats(config) {
 /**
  * Adds support for Webpack's internal `__webpack_require__` module loader. Designed
  * to replace the default `HasteModuleLoader` used by Jest.
- * @constructor
+ * @class JestModuleLoader
  */
-function JestModuleLoader(config, environment, resourceMap) {
-    this._config = config;
-    this._environment = environment;
-    this._explicitShouldMock = {};
-    this._explicitlySetMocks = {};
-    this._mockMetaDataCache = {};
-    this._resourceMap = resourceMap;
-    this._shouldAutoMock = true;
-    this._configShouldMockModuleNames = {};
-    this._requiringActual = false;
-    this._manualMockMap = {};
+class JestModuleLoader {
 
-    if (!webpackStats) {
-        webpackStats = getWebpackStats(config);
-    }
+    constructor(config, environment, resourceMap) {
+        this._config = config;
+        this._environment = environment;
+        this._explicitShouldMock = {};
+        this._explicitlySetMocks = {};
+        this._mockMetaDataCache = {};
+        this._resourceMap = resourceMap;
+        this._shouldAutoMock = true;
+        this._configShouldMockModuleNames = {};
+        this._requiringActual = false;
+        this._manualMockMap = {};
+        this._jestRuntime = null;
 
-    if (_configUnmockListRegExpCache === null) {
-        // Node must have been run with --harmony in order for WeakMap to be
-        // available prior to version 0.12
-        if (typeof WeakMap !== 'function') {
-            throw new Error(
-                'Please run node with the --harmony flag! jest requires WeakMap ' +
-                'which is only available with the --harmony flag in node < v0.12'
-            );
+        // Shared across instances
+        if (!webpackStats) {
+            webpackStats = getWebpackStats(config);
         }
 
-        _configUnmockListRegExpCache = new WeakMap();
-    }
-
-    if (!config.unmockedModulePathPatterns ||
-        config.unmockedModulePathPatterns.length === 0) {
-        this._unmockListRegExps = [];
-    } else {
-        this._unmockListRegExps = _configUnmockListRegExpCache.get(config);
-        if (!this._unmockListRegExps) {
-            this._unmockListRegExps = config.unmockedModulePathPatterns
-                .map(function(unmockPathRe) {
-                    return new RegExp(unmockPathRe);
-                });
-            _configUnmockListRegExpCache.set(config, this._unmockListRegExps);
+        if (_configUnmockListRegExpCache === null) {
+            _configUnmockListRegExpCache = new WeakMap();
         }
+
+        if (!config.unmockedModulePathPatterns ||
+            config.unmockedModulePathPatterns.length === 0) {
+            this._unmockListRegExps = [];
+        } else {
+            this._unmockListRegExps = _configUnmockListRegExpCache.get(config);
+            if (!this._unmockListRegExps) {
+                this._unmockListRegExps = config.unmockedModulePathPatterns
+                    .map(function(unmockPathRe) {
+                        return new RegExp(unmockPathRe);
+                    });
+                _configUnmockListRegExpCache.set(config, this._unmockListRegExps);
+            }
+        }
+
+        this.resetModuleRegistry();
     }
 
-    this.resetModuleRegistry();
-}
-
-JestModuleLoader.loadResourceMap = loadSimpleResourceMap;
-
-// NOTE: Currently doesn't implement cache file, not sure if 'glob' supports this or if
-// a fs.stats obj will need to be manually stored.
-JestModuleLoader.loadResourceMapFromCacheFile = loadSimpleResourceMap;
-
-// TODO: need to think about how `setupEnvScriptFile` and `setupTestFrameworkScriptFile`
-// will work as the 'jest-runtime' depends on the Webpack runtime (i.e. __webpack_require__)
-// and so running these setup files before then won't work.
-JestModuleLoader.prototype.constructBoundRequire = function(sourceModulePath) {
-    return function() {
-        throw new Error('`JestModuleLoader` does not implement `require` for modules outside of Webpack.');
-    };
-};
-
-/**
- * Coverage would likely make more sense as a Webpack loader.
- * https://github.com/deepsweet/istanbul-instrumenter-loader?
- * Although I wonder what implications there are when we run tests with a bundle
- * per test file (i.e. lot's of duplicated code).
- */
-JestModuleLoader.prototype.getAllCoverageInfo = function() {
-    throw new Error('\'JestModuleLoader\' does not implement coverage.');
-};
-
-JestModuleLoader.prototype.getCoverageForFilePath = function() {
-    throw new Error('\'JestModuleLoader\' does not implement coverage.');
-};
-
-JestModuleLoader.prototype.getDependenciesFromPath = function() {
-    throw new Error('\'JestModuleLoader\' does not implement coverage.');
-};
-
-// TODO: Investigate this method further (it's called from TestRunner).
-JestModuleLoader.prototype.getDependentsFromPath = function() {
-    return [];
-};
-
-// Pretty certain this doesn't need to be public, it's only exposed on `require.requireMock`
-// which `JestModuleLoader` will handle via `jest._webpackRequire.requireMock`.
-JestModuleLoader.prototype.requireMock = function(currPath, moduleName) {
-    throw new Error('\'JestModuleLoader\' does not implement `requireMock` for modules outside of Webpack.');
-};
-
-/**
- * We only use `requireModule` to require in the initial bundled test files
- * as well as built in modules (i.e. 'jest-runtime'). All other modules are handled
- * by Webpack which means this can be greatly simplified vs `HasteModuleLoader`.
- * This means the `currPath` always === `moduleName` and `bypassRegistryCache` is
- * not applicable.
- *
- * @param  {String}  currPath            The path of the file that is attempting to
- *                                       resolve the module.
- * @param  {String}  moduleName          The name of the module to be resolved.
- * @param  {Boolean} bypassRegistryCache Whether we should read from/write to the module
- *                                       registry.
- * @return {Object}
- */
-JestModuleLoader.prototype.requireModule = function(currPath, moduleName) {
-
-    var moduleObj;
-
-    if (moduleName === 'jest-runtime') {
-        moduleObj = {
-            exports: this.getJestRuntime()
-        };
-    } else {
-        moduleObj = {
-            __filename: currPath,
-            exports: {}
-        };
-        this._execModule(moduleObj);
+    static loadResourceMap() {
+        return loadSimpleResourceMap(...arguments);
     }
 
-    return moduleObj.exports;
-};
+    // NOTE: Currently doesn't implement cache file, not sure if 'glob' supports this or if
+    // a fs.stats obj will need to be manually stored.
+    static loadResourceMapFromCacheFile() {
+        return loadSimpleResourceMap(...arguments);
+    }
 
-/**
- * Given the `moduleObj` holding the module path the file is evaluated in the
- * bound JSDom env.
- * @param  {Object}    moduleObj The module obj.
- * @return {Undefined}           The `moduleObj` is mutated as a result
- *                               of this method.
- */
-JestModuleLoader.prototype._execModule = function(moduleObj) {
+    constructBoundRequire() {
+        return function() {
+            throw new Error('`JestModuleLoader` does not implement `require` for modules outside of Webpack.');
+        };
+    }
 
-    var modulePath = moduleObj.__filename;
-    var moduleLocalBindings = {
-        // `module`, `exports`, `require`, `__dirname` and `__filename` aren't
-        // necessary here as we're only executing a Webpack bundle.
-        global: this._environment.global,
-        jest: this.getJestRuntime()
-    };
+    /**
+     * Coverage would likely make more sense as a Webpack loader.
+     * https://github.com/deepsweet/istanbul-instrumenter-loader?
+     * Although I wonder what implications there are when we run tests with a bundle
+     * per test file (i.e. lot's of duplicated code).
+     */
+    getAllCoverageInfo() {
+        throw new Error('\'JestModuleLoader\' does not implement coverage.');
+    }
 
-    // Might as well support 0.4.x and 0.5.x in order to support Node 0.10.x and 4.0.x
-    // https://github.com/facebook/jest/commit/eb2eaee1b6d882f529030e2f2a1c974f39fba1e1
-    if (semver.lt(jest.getVersion(), '0.5.0')) {
-        utils.runContentWithLocalBindings(
-            this._environment.runSourceText.bind(this._environment),
-            fs.readFileSync(modulePath, 'utf8'),
-            modulePath,
-            moduleLocalBindings
-        );
-    } else {
+    getCoverageForFilePath() {
+        throw new Error('\'JestModuleLoader\' does not implement coverage.');
+    }
+
+    getDependenciesFromPath() {
+        throw new Error('\'JestModuleLoader\' does not implement coverage.');
+    }
+
+    // TODO: Investigate this method further (it's called from TestRunner).
+    getDependentsFromPath() {
+        return [];
+    }
+
+    // Pretty certain this doesn't need to be public, it's only exposed on `require.requireMock`
+    // which `JestModuleLoader` will handle via `jest._webpackRequire.requireMock`.
+    requireMock() {
+        throw new Error('\'JestModuleLoader\' does not implement `requireMock` for modules outside of Webpack.');
+    }
+
+    /**
+     * We only use `requireModule` to require in the initial bundled test files
+     * as well as built in modules (i.e. 'jest-runtime'). All other modules are handled
+     * by Webpack which means this can be greatly simplified vs `HasteModuleLoader`.
+     * This means the `currPath` always === `moduleName` and `bypassRegistryCache` is
+     * not applicable.
+     *
+     * @param  {String}  currPath            The path of the file that is attempting to
+     *                                       resolve the module.
+     * @param  {String}  moduleName          The name of the module to be resolved.
+     * @param  {Boolean} bypassRegistryCache Whether we should read from/write to the module
+     *                                       registry.
+     * @return {Object}
+     */
+    requireModule(currPath, moduleName) {
+
+        let moduleObj;
+
+        // TODO: remove this as latest jest doesn't ever require('jest-runtime'),
+        // it just calls moduleLoader.getJestRuntim();.
+        if (moduleName === 'jest-runtime') {
+            moduleObj = {
+                exports: this.getJestRuntime()
+            };
+        } else {
+            moduleObj = {
+                __filename: currPath,
+                exports: {}
+            };
+            this._execModule(moduleObj);
+        }
+
+        return moduleObj.exports;
+    }
+
+    /**
+     * Given the `moduleObj` holding the module path the file is evaluated in the
+     * bound JSDom env.
+     * @param  {Object}    moduleObj The module obj.
+     */
+    _execModule(moduleObj) {
+
+        let modulePath = moduleObj.__filename;
+        let moduleLocalBindings = {
+            // `module`, `exports`, `require`, `__dirname` and `__filename` aren't
+            // necessary here as we're only executing a Webpack bundle.
+            global: this._environment.global,
+            jest: this.getJestRuntime()
+        };
+
         utils.runContentWithLocalBindings(
             this._environment,
             fs.readFileSync(modulePath, 'utf8'),
@@ -249,354 +233,333 @@ JestModuleLoader.prototype._execModule = function(moduleObj) {
             moduleLocalBindings
         );
     }
-};
 
-// This is bound to the require in HasteModuleLoader, `JestModuleLoader` handles
-// this with `jest._webpackRequire`.
-JestModuleLoader.prototype.requireModuleOrMock = function() {
-    throw new Error('\'JestModuleLoader\' does not implement `requireModuleOrMock` for modules outside of Webpack.');
-};
-
-/**
- * Returns the Jest runtime.
- * @param  {String} dir Has no use in `JestModuleLoader`.
- * @return {Object}     The Jest runtime.
- */
-JestModuleLoader.prototype.getJestRuntime = function() {
-    if (!this._jestRuntime) {
-        this._jestRuntime = this._createRuntime();
+    // This is bound to the require in HasteModuleLoader, `JestModuleLoader` handles
+    // this with `jest._webpackRequire`.
+    requireModuleOrMock() {
+        throw new Error('\'JestModuleLoader\' does not implement `requireModuleOrMock` for modules outside of Webpack.');
     }
-    return this._jestRuntime;
-};
 
-// TODO: see if we can inherit the non path-dependent runtime methods.
-JestModuleLoader.prototype._createRuntime = function() {
-    var runtime = {
-        addMatchers: function(matchers) {
-            var jasmine = this._environment.global.jasmine;
-            var spec = jasmine.getEnv().currentSpec;
-            spec.addMatchers(matchers);
-        }.bind(this),
+    /**
+     * Returns the Jest runtime.
+     * @param  {String} dir Has no use in `JestModuleLoader`.
+     * @return {Object}     The Jest runtime.
+     */
+    getJestRuntime() {
+        if (!this._jestRuntime) {
+            this._jestRuntime = this._createRuntime();
+        }
+        return this._jestRuntime;
+    }
 
-        autoMockOff: function() {
-            this._shouldAutoMock = false;
-            return runtime;
-        }.bind(this),
+    // TODO: see if we can inherit the non path-dependent runtime methods.
+    _createRuntime() {
+        const runtime = {
 
-        autoMockOn: function() {
-            this._shouldAutoMock = true;
-            return runtime;
-        }.bind(this),
+            addMatchers: matchers => {
+                const jasmine = this._environment.global.jasmine;
+                const spec = jasmine.getEnv().currentSpec;
+                spec.addMatchers(matchers);
+            },
 
-        clearAllTimers: function() {
-            this._environment.fakeTimers.clearAllTimers();
-        }.bind(this),
+            autoMockOff: () => {
+                this._shouldAutoMock = false;
+                return runtime;
+            },
 
-        currentTestPath: function() {
-            return this._environment.testFilePath;
-        }.bind(this),
+            autoMockOn: () => {
+                this._shouldAutoMock = true;
+                return runtime;
+            },
 
-        dontMock: function(moduleId) {
-            this._explicitShouldMock[moduleId] = false;
-            return runtime;
-        }.bind(this),
+            clearAllTimers: () => this._environment.fakeTimers.clearAllTimers(),
 
-        // This isn't documented...
-        getTestEnvData: function() {
-            var frozenCopy = {};
-            // Make a shallow copy only because a deep copy seems like
-            // overkill..
-            Object.keys(this._config.testEnvData).forEach(function(key) {
-                frozenCopy[key] = this._config.testEnvData[key];
-            }, this);
-            Object.freeze(frozenCopy);
-            return frozenCopy;
-        }.bind(this),
+            currentTestPath: () => this._environment.testFilePath,
 
-        genMockFromModule: function(moduleId) {
-            return this._generateMock(moduleId, true);
-        }.bind(this),
+            dontMock: (moduleId) => {
+                this._explicitShouldMock[moduleId] = false;
+                return runtime;
+            },
 
-        genMockFunction: function() {
-            return moduleMocker.getMockFunction();
-        },
+            // This isn't documented...
+            getTestEnvData: () => {
+                const frozenCopy = {};
+                // Make a shallow copy only because a deep copy seems like
+                // overkill..
+                Object.keys(this._config.testEnvData).forEach(function(key) {
+                    frozenCopy[key] = this._config.testEnvData[key];
+                }, this);
+                Object.freeze(frozenCopy);
+                return frozenCopy;
+            },
 
-        mock: function(moduleId) {
-            this._explicitShouldMock[moduleId] = true;
-            return runtime;
-        }.bind(this),
+            genMockFromModule: moduleId => this._generateMock(moduleId, true),
 
-        /* eslint-disable */
-        resetModuleRegistry: function() {
-            var globalMock;
-            for (var key in this._environment.global) {
-                globalMock = this._environment.global[key];
-                if ((typeof globalMock === 'object' && globalMock !== null)
-                    || typeof globalMock === 'function') {
-                    globalMock._isMockFunction && globalMock.mockClear();
+            genMockFunction: moduleMocker.getMockFunction,
+
+            genMockFn: moduleMocker.getMockFunction,
+
+            mock: moduleId => {
+                this._explicitShouldMock[moduleId] = true;
+                return runtime;
+            },
+
+            /* eslint-disable */
+            resetModuleRegistry: () => {
+                const envGlobal = this._environment.global;
+                Object.keys(envGlobal).forEach(key => {
+                    const globalMock = envGlobal[key];
+                    if ((typeof globalMock === 'object' && globalMock !== null) ||
+                        typeof globalMock === 'function') {
+                        globalMock._isMockFunction && globalMock.mockClear();
+                    }
+                });
+
+                if (envGlobal.mockClearTimers) {
+                    envGlobal.mockClearTimers();
                 }
+
+                this.resetModuleRegistry();
+
+                return runtime;
+            },
+            /* eslint-enable */
+
+            runAllTicks: () => this._environment.fakeTimers.runAllTicks(),
+
+            runAllImmediates: () => this._environment.fakeTimers.runAllImmediates(),
+
+            runAllTimers: () => this._environment.fakeTimers.runAllTimers(),
+
+            runOnlyPendingTimers: () => this._environment.fakeTimers.runOnlyPendingTimers(),
+
+            setMock: (moduleId, moduleExports) => {
+                this._explicitShouldMock[moduleId] = true;
+                this._explicitlySetMocks[moduleId] = moduleExports;
+                return runtime;
+            },
+
+            useFakeTimers: () => this._environment.fakeTimers.useFakeTimers(),
+
+            useRealTimers: () => this._environment.fakeTimers.useRealTimers(),
+
+            /* eslint-disable camelcase */
+            _setupWebpackRequire: __webpack_require__ => this._setupWebpackRequire(
+                runtime,
+                __webpack_require__
+            ),
+            /* eslint-enable */
+
+            /**
+             * This is the 'patched' require passed around in the compiled
+             * Webpack build as `__webpack_require__`.
+             * @param  {Number} moduleId The Webpack moduleId.
+             * @return {*}               The module or mock.
+             */
+            _webpackRequire: moduleId => this._webpackRequireModuleOrMock(moduleId),
+
+            /**
+             * Registers a manual mock (used by the `ManualMockLoader`).
+             * @param  {Number} moduleId     The Webpack moduleId.
+             * @param  {Number} mockModuleId The Webpack mock moduleId.
+             */
+            _registerManualMock: (moduleId, mockModuleId) => this._manualMockMap[moduleId] = mockModuleId
+        };
+
+        runtime._webpackRequire.requireActual = moduleId => {
+            let module;
+            this._requiringActual = true;
+            module = this._webpackRequireModule(moduleId);
+            this._requiringActual = false;
+            return module;
+        };
+
+        return runtime;
+    }
+
+    resetModuleRegistry() {
+        this._mockRegistry = {};
+        this._environment.global.installedModules = {};
+    }
+
+    /* eslint-disable camelcase */
+    /**
+     * Stores reference to the real `__webpack_require__` and copies static methods
+     * to the wrapping `jest._webpackRequire`.
+     * @param  {Object}   runtime             The Jest runtime.
+     * @param  {Function} __webpack_require__ The real Webpack require.
+     */
+    _setupWebpackRequire(runtime, __webpack_require__) {
+        let prop;
+        this.__webpack_require__ = __webpack_require__;
+        for (prop in __webpack_require__) {
+            if (__webpack_require__.hasOwnProperty(prop)) {
+                runtime._webpackRequire[prop] = __webpack_require__[prop];
             }
-
-            if (this._environment.global.mockClearTimers) {
-                this._environment.global.mockClearTimers();
-            }
-
-            this.resetModuleRegistry();
-
-            return runtime;
-        }.bind(this),
-        /* eslint-enable */
-
-        runAllTicks: function() {
-            this._environment.fakeTimers.runAllTicks();
-        }.bind(this),
-
-        runAllImmediates: function() {
-            this._environment.fakeTimers.runAllImmediates();
-        }.bind(this),
-
-        runAllTimers: function() {
-            this._environment.fakeTimers.runAllTimers();
-        }.bind(this),
-
-        runOnlyPendingTimers: function() {
-            this._environment.fakeTimers.runOnlyPendingTimers();
-        }.bind(this),
-
-        setMock: function(moduleId, moduleExports) {
-            this._explicitShouldMock[moduleId] = true;
-            this._explicitlySetMocks[moduleId] = moduleExports;
-            return runtime;
-        }.bind(this),
-
-        useFakeTimers: function() {
-            this._environment.fakeTimers.useFakeTimers();
-        }.bind(this),
-
-        useRealTimers: function() {
-            this._environment.fakeTimers.useRealTimers();
-        }.bind(this),
-
-        /**
-         * See `this._setupWebpackRequire`.
-         */
-        _setupWebpackRequire: function(__webpack_require__) {
-            this._setupWebpackRequire(runtime, __webpack_require__);
-        }.bind(this),
-
-        /**
-         * This is the 'patched' require passed around in the compiled
-         * Webpack build as `__webpack_require__`.
-         * @param  {Number} moduleId The Webpack moduleId.
-         * @return {*}               The module or mock.
-         */
-        _webpackRequire: function(moduleId) {
-            return this._webpackRequireModuleOrMock(moduleId);
-        }.bind(this),
-
-        /**
-         * Registers a manual mock (used by the `ManualMockLoader`).
-         * @param  {Number} moduleId     The Webpack moduleId.
-         * @param  {Number} mockModuleId The Webpack mock moduleId.
-         */
-        _registerManualMock: function(moduleId, mockModuleId) {
-            this._manualMockMap[moduleId] = mockModuleId;
-        }.bind(this)
-    };
-
-    runtime._webpackRequire.requireActual = function(moduleId) {
-        var module;
-        this._requiringActual = true;
-        module = this._webpackRequireModule(moduleId);
-        this._requiringActual = false;
-        return module;
-    }.bind(this);
-
-    runtime.genMockFn = runtime.genMockFunction;
-
-    return runtime;
-};
-
-/**
- * Clears module and mock cache's.
- */
-JestModuleLoader.prototype.resetModuleRegistry = function() {
-    this._mockRegistry = {};
-    this._environment.global.installedModules = {};
-};
-
-/**
- * Stores reference to the real `__webpack_require__` and copies static methods 
- * to the wrapping `jest._webpackRequire`.
- * @param  {Object}   moduleId The Jest runtime.
- * @param  {Function} moduleId The real Webpack require.
- */
-JestModuleLoader.prototype._setupWebpackRequire = function(runtime, __webpack_require__) {
-    var prop;
-    this.__webpack_require__ = __webpack_require__;
-    for (prop in __webpack_require__) {
-        if (__webpack_require__.hasOwnProperty(prop)) {
-            runtime._webpackRequire[prop] = __webpack_require__[prop];
         }
     }
-};
+    /* eslint-enable */
 
-/**
- * Requires either the module or mock.
- * @param  {Number} moduleId The Webpack moduleId.
- * @return {*}               The module or mock.
- */
-JestModuleLoader.prototype._webpackRequireModuleOrMock = function(moduleId) {
-    if (this._shouldMock(moduleId)) {
-        return this._webpackRequireMock(moduleId);
-    }
-    return this._webpackRequireModule(moduleId);
-};
-
-/**
- * Requires the Webpack module.
- * @param  {Number} moduleId The Webpack moduleId.
- * @return {*}               The module.
- */
-JestModuleLoader.prototype._webpackRequireModule = function() {
-    var webpackRequire = this.__webpack_require__;
-
-    if (!webpackRequire) {
-        throw new Error('`__webpack_require__` has not been defined.');
+    /**
+     * Requires either the module or mock.
+     * @param  {Number} moduleId The Webpack moduleId.
+     * @return {*}               The module or mock.
+     */
+    _webpackRequireModuleOrMock(moduleId) {
+        if (this._shouldMock(moduleId)) {
+            return this._webpackRequireMock(moduleId);
+        }
+        return this._webpackRequireModule(moduleId);
     }
 
-    return webpackRequire.apply(void 0, arguments);
-};
+    /**
+     * Requires the Webpack module.
+     * @param  {Number} moduleId The Webpack moduleId.
+     * @return {*}               The module.
+     */
+    _webpackRequireModule() {
+        let webpackRequire = this.__webpack_require__;
 
-/**
- * Requires a mocked version of the module.
- * @param  {Number} moduleId The Webpack moduleId.
- * @return {*}               The mock.
- */
-JestModuleLoader.prototype._webpackRequireMock = function(moduleId) {
+        if (!webpackRequire) {
+            throw new Error('`__webpack_require__` has not been defined.');
+        }
 
-    if (this._explicitlySetMocks.hasOwnProperty(moduleId)) {
-        return this._explicitlySetMocks[moduleId];
+        return webpackRequire.apply(void 0, arguments);
     }
 
-    if (this._mockRegistry.hasOwnProperty(moduleId)) {
+    /**
+     * Requires a mocked version of the module.
+     * @param  {Number} moduleId The Webpack moduleId.
+     * @return {*}               The mock.
+     */
+    _webpackRequireMock(moduleId) {
+
+        if (this._explicitlySetMocks.hasOwnProperty(moduleId)) {
+            return this._explicitlySetMocks[moduleId];
+        }
+
+        if (this._mockRegistry.hasOwnProperty(moduleId)) {
+            return this._mockRegistry[moduleId];
+        }
+
+        this._mockRegistry[moduleId] = this._generateMock(moduleId);
         return this._mockRegistry[moduleId];
     }
 
-    this._mockRegistry[moduleId] = this._generateMock(moduleId);
-    return this._mockRegistry[moduleId];
-};
+    /**
+     * Generates a mock from the given module.
+     * @override
+     * @param  {Number}  moduleId         The Webpack moduleId.
+     * @param  {Boolean} ignoreManualMock If true manual mocks won't be returned.
+     * @return {*}                        The mock.
+     */
+    _generateMock(moduleId, ignoreManualMock) {
 
-/**
- * Generates a mock from the given module.
- * @override
- * @param  {Number}  moduleId         The Webpack moduleId.
- * @param  {Boolean} ignoreManualMock If true manual mocks won't be returned.
- * @return {*}                        The mock.
- */
-JestModuleLoader.prototype._generateMock = function(moduleId, ignoreManualMock) {
+        let module;
 
-    var origMockRegistry;
-    var origModuleRegistry;
-    var module;
+        if (!this._mockMetaDataCache.hasOwnProperty(moduleId)) {
+            let origMockRegistry;
+            let origModuleRegistry;
 
-    if (!this._mockMetaDataCache.hasOwnProperty(moduleId)) {
-        // This allows us to handle circular dependencies while generating an
-        // automock.
-        this._mockMetaDataCache[moduleId] = moduleMocker.getMetadata({});
+            // This allows us to handle circular dependencies while generating an
+            // automock.
+            this._mockMetaDataCache[moduleId] = moduleMocker.getMetadata({});
 
-        // In order to avoid it being possible for automocking to potentially cause
-        // side-effects within the module environment, we need to execute the module
-        // in isolation. This accomplishes that by temporarily clearing out the
-        // module and mock registries while the module being analyzed is executed.
-        //
-        // An example scenario where this could cause issue is if the module being
-        // mocked has calls into side-effectful APIs on another module.
-        origMockRegistry = this._mockRegistry;
-        origModuleRegistry = this._environment.global.installedModules;
-        this._mockRegistry = {};
-        this._environment.global.installedModules = {};
+            // In order to avoid it being possible for automocking to potentially cause
+            // side-effects within the module environment, we need to execute the module
+            // in isolation. This accomplishes that by temporarily clearing out the
+            // module and mock registries while the module being analyzed is executed.
+            //
+            // An example scenario where this could cause issue is if the module being
+            // mocked has calls into side-effectful APIs on another module.
+            origMockRegistry = this._mockRegistry;
+            origModuleRegistry = this._environment.global.installedModules;
+            this._mockRegistry = {};
+            this._environment.global.installedModules = {};
 
-        module = this._webpackRequireModule(moduleId);
+            module = this._webpackRequireModule(moduleId);
 
-        // Restore the "real" module/mock registries
-        this._mockRegistry = origMockRegistry;
-        this._environment.global.installedModules = origModuleRegistry;
+            // Restore the "real" module/mock registries
+            this._mockRegistry = origMockRegistry;
+            this._environment.global.installedModules = origModuleRegistry;
 
-        this._mockMetaDataCache[moduleId] = moduleMocker.getMetadata(module);
+            this._mockMetaDataCache[moduleId] = moduleMocker.getMetadata(module);
+        }
+
+        // Check whether a manual mock was registered as a result of running the module
+        // via `jest._registerManualMock` / the `ManualMockLoader`.
+        if (!ignoreManualMock && this._manualMockMap.hasOwnProperty(moduleId)) {
+            return this._webpackRequireModule(this._manualMockMap[moduleId]);
+        }
+
+        return moduleMocker.generateFromMetadata(this._mockMetaDataCache[moduleId]);
     }
 
-    // Check whether a manual mock was registered as a result of running the module
-    // via `jest._registerManualMock` / the `ManualMockLoader`.
-    if (!ignoreManualMock && this._manualMockMap.hasOwnProperty(moduleId)) {
-        return this._webpackRequireModule(this._manualMockMap[moduleId]);
-    }
+    /**
+     * Determines whether a particular module should be mocked or not.
+     * @param  {Number}  moduleId The Webpack moduleId.
+     * @return {Boolean}
+     */
+    _shouldMock(moduleId) {
 
-    return moduleMocker.generateFromMetadata(this._mockMetaDataCache[moduleId]);
-};
+        // Never mock the entry module as that's the test.
+        if (moduleId === 0 || this._requiringActual) {
+            return false;
+        }
 
-/**
- * Determines whether a particular module should be mocked or not.
- * @param  {Number}  moduleId The Webpack moduleId.
- * @return {Boolean}
- */
-JestModuleLoader.prototype._shouldMock = function(moduleId) {
+        if (this._explicitShouldMock.hasOwnProperty(moduleId)) {
+            return this._explicitShouldMock[moduleId];
+        }
 
-    // Never mock the entry module as that's the test.
-    if (moduleId === 0 || this._requiringActual) {
+        if (this._shouldAutoMock) {
+            if (!this._configShouldMockModuleNames.hasOwnProperty(moduleId) &&
+                this._unmockListRegExps.length > 0) {
+                this._configShouldMockModuleNames[moduleId] = !this._doesMatchUnmockListRegExps(moduleId);
+            }
+            return !!this._configShouldMockModuleNames[moduleId];
+        }
+
         return false;
     }
 
-    if (this._explicitShouldMock.hasOwnProperty(moduleId)) {
-        return this._explicitShouldMock[moduleId];
-    }
+    /**
+     * Checks the module path against the paths defined in `config.unmockedModulePathPatterns`.
+     * @param  {Number}  moduleId The Webpack moduleId.
+     * @return {Boolean}
+     */
+    _doesMatchUnmockListRegExps(moduleId) {
 
-    if (this._shouldAutoMock) {
-        if (!this._configShouldMockModuleNames.hasOwnProperty(moduleId) &&
-            this._unmockListRegExps.length > 0) {
-            this._configShouldMockModuleNames[moduleId] = !this._doesMatchUnmockListRegExps(moduleId);
+        const modulePath = this._getModulePathFromModuleId(moduleId);
+
+        let unmockRegExp;
+        let i;
+
+        for (i = 0; i < this._unmockListRegExps.length; i++) {
+            unmockRegExp = this._unmockListRegExps[i];
+            if (unmockRegExp.test(modulePath)) {
+                return true;
+            }
         }
-        return !!this._configShouldMockModuleNames[moduleId];
+
+        return false;
     }
 
-    return false;
-};
-
-/**
- * Checks the module path against the paths defined in `config.unmockedModulePathPatterns`.
- * @param  {Number}  moduleId The Webpack moduleId.
- * @return {Boolean}
- */
-JestModuleLoader.prototype._doesMatchUnmockListRegExps = function(moduleId) {
-
-    var modulePath = this._getModulePathFromModuleId(moduleId);
-    var unmockRegExp;
-    var i;
-
-    for (i = 0; i < this._unmockListRegExps.length; i++) {
-        unmockRegExp = this._unmockListRegExps[i];
-        if (unmockRegExp.test(modulePath)) {
-            return true;
+    /**
+     * Given the Webpack `moduleId` returns the module path.
+     * @param  {Number} moduleId The Webpack moduleId.
+     * @return {String}          The module path. NOTE: This may contain the Webpack
+     *                           loader path.
+     */
+    _getModulePathFromModuleId(moduleId) {
+        const moduleStats = _.findWhere(webpackStats.modules, {
+            id: moduleId
+        });
+        if (!moduleStats) {
+            throw new Error('ModuleId ' + moduleId + ' not found in Webpack stats json.');
         }
+        return moduleStats.identifier;
     }
 
-    return false;
-};
-
-/**
- * Given the Webpack `moduleId` returns the module path.
- * @param  {Number} moduleId The Webpack moduleId.
- * @return {String}          The module path. NOTE: This may contain the Webpack
- *                           loader path.
- */
-JestModuleLoader.prototype._getModulePathFromModuleId = function(moduleId) {
-    var moduleStats = _.findWhere(webpackStats.modules, {
-        id: moduleId
-    });
-    if (!moduleStats) {
-        throw new Error('ModuleId ' + moduleId + ' not found in Webpack stats json.');
-    }
-    return moduleStats.identifier;
-};
+}
 
 module.exports = JestModuleLoader;

@@ -4,7 +4,10 @@ Unfortunately [Jest doesn't play nicely with Webpack](http://stackoverflow.com/q
 Jestpack attempts to solve this problem by ~~extending~~ replacing Jest's default module loader to support Webpack's internal module system.
 
 ## Installation
+
 `npm install jestpack --save-dev`
+
+> NOTE: Jestpack >=0.2.0 depends on Node >=5.x.x.
 
 > NOTE: Jestpack declares both `jest-cli` and `webpack` as peer dependencies meaning you must declare them both as either `devDependencies` or `dependencies` in your projects `package.json`.
 
