@@ -1,10 +1,10 @@
 'use strict';
 
-var path = require('path');
-var fs = require('fs');
+const path = require('path');
+const fs = require('fs');
 
-var LOADER_DELIMITER = '!';
-var MOCKS_DIR_NAME = '__mocks__';
+const LOADER_DELIMITER = '!';
+const MOCKS_DIR_NAME = '__mocks__';
 
 /**
  * A module is considered a package if a) it does not being with './',
@@ -16,26 +16,26 @@ var MOCKS_DIR_NAME = '__mocks__';
  * @return {Boolean}
  */
 function isPackage(loaderLessRawRequest, resourcePath, modulesDirectories) {
-    return modulesDirectories.some(function(dir) {
+    return modulesDirectories.some(dir => {
         return resourcePath.indexOf(dir) !== -1;
-    }) && !['.', '/'].some(function(val) {
+    }) && !['.', '/'].some(val => {
         return val === loaderLessRawRequest[0];
     });
 }
 
-module.exports = function(source) {
+function manualMockLoader(source) {
 
-    var cwd = process.cwd();
-    var request = this.request;
-    var resourcePath = this.resourcePath;
-    var dirName = path.dirname(resourcePath);
-    var fileName = path.basename(resourcePath);
-    var rawRequest = this._module.rawRequest;
-    var rawRequestParts = rawRequest.split(LOADER_DELIMITER);
-    var loaderLessRawRequest = rawRequestParts[rawRequestParts.length - 1];
-    var modulesDirectories = this.options.resolve.modulesDirectories;
-    var mockResourcePath;
-    var stats;
+    const cwd = process.cwd();
+    const request = this.request;
+    const resourcePath = this.resourcePath;
+    const dirName = path.dirname(resourcePath);
+    const fileName = path.basename(resourcePath);
+    const rawRequest = this._module.rawRequest;
+    const rawRequestParts = rawRequest.split(LOADER_DELIMITER);
+    const loaderLessRawRequest = rawRequestParts[rawRequestParts.length - 1];
+    const modulesDirectories = this.options.resolve.modulesDirectories;
+
+    let mockResourcePath;
 
     if (this.cacheable) {
         this.cacheable();
@@ -55,7 +55,7 @@ module.exports = function(source) {
     }
 
     try {
-        stats = fs.statSync(mockResourcePath);
+        let stats = fs.statSync(mockResourcePath);
         if (stats.isFile()) {
             // Using '!!' (https://webpack.github.io/docs/loaders.html#loader-order) to disable all loaders
             // specified in config as the `request` already contains the absolute loader paths.
@@ -67,4 +67,6 @@ module.exports = function(source) {
     }
 
     return source;
-};
+}
+
+module.exports = manualMockLoader;
