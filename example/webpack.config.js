@@ -1,9 +1,9 @@
 'use strict';
 
-var glob = require('glob');
-var webpack = require('webpack');
-var StatsWebpackPlugin = require('stats-webpack-plugin');
-var JestWebpackPlugin = require('jestpack/Plugin');
+const glob = require('glob');
+const webpack = require('webpack');
+const StatsWebpackPlugin = require('stats-webpack-plugin');
+const JestWebpackPlugin = require('jestpack/Plugin');
 
 /**
  * Given a glob pattern returns the matched paths as an entry point object for Webpack.
@@ -19,10 +19,13 @@ function getEntryPoints(globPattern) {
     return entryPoints;
 }
 
+let entryPoints = getEntryPoints('src/**/__tests__/*');
+entryPoints.setup = './setup';
+
 module.exports = {
     debug: true,
     target: 'web',
-    entry: getEntryPoints('src/**/__tests__/*'),
+    entry: entryPoints,
     output: {
         path: '__bundled_tests__',
         filename: '[name].js'
@@ -50,6 +53,11 @@ module.exports = {
     plugins: [
         new JestWebpackPlugin(),
         new StatsWebpackPlugin('stats.json'),
+        new webpack.optimize.CommonsChunkPlugin({
+            name: 'setup',
+            filename: 'common.js',
+            minChunks: 2
+        }),
         new webpack.optimize.LimitChunkCountPlugin({
             maxChunks: 1
         })
