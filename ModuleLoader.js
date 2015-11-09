@@ -65,11 +65,11 @@ function loadSimpleResourceMap(config) {
  */
 function getWebpackStats(config) {
 
-    let statsPaths = config.testPathDirs.map(function(testPathDir) {
+    let statsPaths = config.testPathDirs.map(testPathDir => {
         return path.join(testPathDir, 'stats.json');
     });
 
-    statsPaths.some(function(statsPath) {
+    statsPaths.some(statsPath => {
         try {
             webpackStats = require(statsPath);
         } catch (oh) {
@@ -121,7 +121,7 @@ class JestModuleLoader {
             this._unmockListRegExps = _configUnmockListRegExpCache.get(config);
             if (!this._unmockListRegExps) {
                 this._unmockListRegExps = config.unmockedModulePathPatterns
-                    .map(function(unmockPathRe) {
+                    .map(unmockPathRe => {
                         return new RegExp(unmockPathRe);
                     });
                 _configUnmockListRegExpCache.set(config, this._unmockListRegExps);
@@ -142,7 +142,7 @@ class JestModuleLoader {
     }
 
     constructBoundRequire() {
-        return function() {
+        return () => {
             throw new Error('`JestModuleLoader` does not implement `require` for modules outside of Webpack.');
         };
     }
@@ -286,7 +286,7 @@ class JestModuleLoader {
                 const frozenCopy = {};
                 // Make a shallow copy only because a deep copy seems like
                 // overkill..
-                Object.keys(this._config.testEnvData).forEach(function(key) {
+                Object.keys(this._config.testEnvData).forEach(key => {
                     frozenCopy[key] = this._config.testEnvData[key];
                 }, this);
                 Object.freeze(frozenCopy);
