@@ -33,9 +33,7 @@
     "webpack": "*"
   },
   "dependencies": {
-    "glob": "^5.0.14",
-    "object-assign": "^4.0.1",
-    "underscore": "^1.8.3"
+    "glob": "^5.0.14"
   },
   "devDependencies": {
     "coding-standards": "git+ssh://git@github.com:60frames/coding-standards.git#1.0.6"

@@ -2,7 +2,6 @@
 
 const fs = require('fs');
 const path = require('path');
-const _ = require('underscore');
 const glob = require('glob');
 const moduleMocker = require('jest-cli/src/lib/moduleMocker');
 const utils = require('jest-cli/src/lib/utils');
@@ -551,9 +550,7 @@ class JestModuleLoader {
      *                           loader path.
      */
     _getModulePathFromModuleId(moduleId) {
-        const moduleStats = _.findWhere(webpackStats.modules, {
-            id: moduleId
-        });
+        const moduleStats = (webpackStats.modules || []).find(module => module.id === moduleId);
         if (!moduleStats) {
             throw new Error('ModuleId ' + moduleId + ' not found in Webpack stats json.');
         }
