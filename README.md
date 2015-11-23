@@ -11,6 +11,8 @@ Jestpack attempts to solve this problem by ~~extending~~ replacing Jest's defaul
 
 > NOTE: Jestpack declares both `jest-cli` and `webpack` as peer dependencies meaning you must declare them both as either `devDependencies` or `dependencies` in your projects `package.json`.
 
+> NOTE: Jestpack doesn't currently support Jest 0.8.x https://github.com/60frames/jestpack/issues/12
+
 ## Setup
 Jestpack works by supplying pre-built test files to Jest so the first thing you'll want to do is tell Jest where it can expect to find your soon-to-be-bundled test files:
 
