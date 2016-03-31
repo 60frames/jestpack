@@ -3,7 +3,8 @@
   "version": "0.2.0",
   "description": "Jest Webpack integration",
   "scripts": {
-    "test": "cd example && npm start"
+    "test": "cd example && npm start",
+    "lint": "eslint ."
   },
   "repository": {
     "type": "git",
@@ -36,7 +37,8 @@
     "glob": "^5.0.14"
   },
   "devDependencies": {
-    "coding-standards": "git+ssh://git@github.com:60frames/coding-standards.git#1.0.6"
+    "coding-standards": "git+ssh://git@github.com:60frames/coding-standards.git#1.0.6",
+    "eslint": "^0.24"
   },
   "homepage": "https://github.com/60frames/jestpack#readme"
 }
