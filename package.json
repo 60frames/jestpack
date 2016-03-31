@@ -3,7 +3,7 @@
   "version": "0.2.0",
   "description": "Jest Webpack integration",
   "scripts": {
-    "test": "cd example && npm start",
+    "test": "cd example && npm install && npm start",
     "lint": "eslint ."
   },
   "repository": {
