@@ -1,4 +1,5 @@
-# Jestpack
+# Jestpack [![Build Status](https://travis-ci.org/60frames/jestpack.svg?branch=master)](https://travis-ci.org/60frames/jestpack) [![npm version](https://badge.fury.io/js/jestpack.svg)](https://badge.fury.io/js/jestpack)
+
 Unfortunately [Jest doesn't play nicely with Webpack](http://stackoverflow.com/questions/31547587/testing-webpack-built-react-components-with-jest), especially when using some of Webpack's more useful features such as [loaders](http://webpack.github.io/docs/loaders.html) or [code splitting](http://webpack.github.io/docs/code-splitting.html).
 
 Jestpack attempts to solve this problem by ~~extending~~ replacing Jest's default module loader to support Webpack's internal module system.
