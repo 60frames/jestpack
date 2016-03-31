@@ -1,3 +1,5 @@
+/* eslint-env jasmine */
+
 'use strict';
 
 beforeEach(function() {
