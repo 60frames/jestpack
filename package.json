@@ -37,7 +37,7 @@
     "glob": "^5.0.14"
   },
   "devDependencies": {
-    "coding-standards": "git+ssh://git@github.com:60frames/coding-standards.git#1.0.6",
+    "60frames-coding-standards": "^1.0.7",
     "eslint": "^0.24"
   },
   "homepage": "https://github.com/60frames/jestpack#readme"
