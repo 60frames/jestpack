@@ -31,7 +31,7 @@
     "css-loader": "^0.17.0",
     "glob": "^5.0.14",
     "jest-cli": "^0.7",
-    "jestpack": "git+ssh://git@github.com:60frames/jestpack.git",
+    "jestpack": "file:../",
     "stats-webpack-plugin": "^0.2.1",
     "style-loader": "^0.12.3",
     "webpack": "^1.12.1"
